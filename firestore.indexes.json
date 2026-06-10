@@ -1,0 +1,29 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "carbonLogs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "createdAt", "order": "DESCENDING" },
+        { "fieldPath": "result.monthlyKgCO2e", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "goals",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "completed", "order": "ASCENDING" },
+        { "fieldPath": "dueDate", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "receipts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "createdAt", "order": "DESCENDING" },
+        { "fieldPath": "totalKgCO2e", "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
