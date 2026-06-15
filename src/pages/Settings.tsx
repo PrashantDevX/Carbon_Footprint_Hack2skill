@@ -10,6 +10,8 @@ export function Settings() {
   const { user, updateProfile, signInAnonymously } = useAuth();
   const notifications = useNotifications();
 
+  if (!user) return null;
+
   return (
     <div className="grid gap-5 xl:grid-cols-[1fr_360px]">
       <Card>

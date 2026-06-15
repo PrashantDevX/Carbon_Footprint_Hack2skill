@@ -1,45 +1,113 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { 
+  onAuthStateChanged, 
+  signInWithPopup, 
+  GoogleAuthProvider, 
+  signInAnonymously as firebaseSignInAnonymously,
+  signOut as firebaseSignOut,
+  type User
+} from 'firebase/auth';
+import { auth, db } from '@/lib/firebase';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { defaultProfile } from '@/lib/defaultData';
 import type { UserProfile } from '@/types/user';
 
 interface AuthContextValue {
-  user: UserProfile;
-  updateProfile: (profile: Partial<UserProfile>) => void;
-  signInAnonymously: () => void;
-  signOut: () => void;
+  user: UserProfile | null;
+  loading: boolean;
+  signInWithGoogle: () => Promise<void>;
+  signInAnonymously: () => Promise<void>;
+  signOut: () => Promise<void>;
+  updateProfile: (profile: Partial<UserProfile>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<UserProfile>(() => {
-    const saved = localStorage.getItem('ecotrack-profile');
-    return saved ? (JSON.parse(saved) as UserProfile) : defaultProfile;
-  });
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const updateProfile = (profile: Partial<UserProfile>) => {
-    setUser((current) => {
-      const next = { ...current, ...profile };
-      localStorage.setItem('ecotrack-profile', JSON.stringify(next));
-      return next;
+  useEffect(() => {
+    if (!auth) {
+      setLoading(false);
+      return;
+    }
+
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: User | null) => {
+      if (firebaseUser && db) {
+        // Fetch or create user profile in Firestore
+        const userRef = doc(db, 'users', firebaseUser.uid);
+        const userSnap = await getDoc(userRef);
+        
+        let profileData: UserProfile;
+
+        if (userSnap.exists()) {
+          profileData = userSnap.data() as UserProfile;
+        } else {
+          // Create new user profile
+          profileData = {
+            ...defaultProfile,
+            uid: firebaseUser.uid,
+            email: firebaseUser.email || undefined,
+            displayName: firebaseUser.displayName || 'Eco Explorer',
+            photoURL: firebaseUser.photoURL || undefined,
+            createdAt: new Date().toISOString(),
+          };
+          await setDoc(userRef, {
+            ...profileData,
+            createdAt: serverTimestamp()
+          });
+        }
+        
+        setUser(profileData);
+      } else {
+        setUser(null);
+      }
+      setLoading(false);
     });
+
+    return () => unsubscribe();
+  }, []);
+
+  const signInWithGoogle = async () => {
+    if (!auth) throw new Error("Firebase Auth is not initialized");
+    const provider = new GoogleAuthProvider();
+    await signInWithPopup(auth, provider);
   };
 
-  const value = useMemo<AuthContextValue>(
-    () => ({
-      user,
-      updateProfile,
-      signInAnonymously: () => updateProfile({ uid: 'anonymous-demo', displayName: 'Guest Explorer' }),
-      signOut: () => updateProfile(defaultProfile)
-    }),
-    [user]
-  );
+  const signInAnonymously = async () => {
+    if (!auth) throw new Error("Firebase Auth is not initialized");
+    await firebaseSignInAnonymously(auth);
+  };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  const signOut = async () => {
+    if (!auth) return;
+    await firebaseSignOut(auth);
+  };
+
+  const updateProfile = async (updates: Partial<UserProfile>) => {
+    if (!user || !db) return;
+    const userRef = doc(db, 'users', user.uid);
+    await setDoc(userRef, updates, { merge: true });
+    setUser(prev => prev ? { ...prev, ...updates } : null);
+  };
+
+  const value = {
+    user,
+    loading,
+    signInWithGoogle,
+    signInAnonymously,
+    signOut,
+    updateProfile
+  };
+
+  return <AuthContext.Provider value={value}>{!loading && children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (!context) throw new Error('useAuth must be used inside AuthProvider');
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
   return context;
 }

@@ -12,6 +12,8 @@ export interface UserProfile {
   badges: string[];
   preferredLanguage: 'en' | 'hi' | 'es';
   notificationsEnabled: boolean;
+  photoURL?: string;
+  createdAt?: string;
 }
 
 export interface LeaderboardUser {

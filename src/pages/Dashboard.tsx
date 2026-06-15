@@ -1,4 +1,5 @@
-import { ArrowDownRight, ArrowUpRight, Award, Leaf, Target } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { ArrowDownRight, ArrowUpRight, Award, Leaf, Target, Zap } from 'lucide-react';
 import { CategoryChart } from '@/components/charts/CategoryChart';
 import { CarbonTrendChart } from '@/components/charts/CarbonTrendChart';
 import { Card } from '@/components/ui/Card';
@@ -6,81 +7,151 @@ import { useCarbon } from '@/hooks/useCarbon';
 import { defaultInput } from '@/lib/defaultData';
 import { formatKg } from '@/lib/utils';
 import type { CarbonLog } from '@/types/carbon';
+import { useAuth } from '@/contexts/AuthContext';
+
+import type { Variants } from 'framer-motion';
+
+const containerVariants: Variants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1
+    }
+  }
+};
+
+const itemVariants: Variants = {
+  hidden: { opacity: 0, y: 20 },
+  show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
+};
 
 export function Dashboard() {
   const { result, logs, goals, challenges } = useCarbon();
+  const { user } = useAuth();
   const trendLogs = logs.length > 2 ? logs : buildDemoTrend(logs[0]);
   const activeGoals = goals.filter((goal) => !goal.completed).length;
   const completedChallenges = challenges.filter((challenge) => challenge.completed).length;
   const vsGlobal = result.comparison.percentVsGlobal;
 
   return (
-    <div className="grid gap-5">
-      <section className="grid gap-4 xl:grid-cols-[1.4fr_0.8fr]">
-        <Card className="overflow-hidden bg-[linear-gradient(135deg,#ffffff_0%,#ecfdf5_62%,#fff7ed_100%)]">
-          <div className="grid gap-5 md:grid-cols-[1fr_220px]">
-            <div>
-              <p className="text-sm font-semibold text-leaf">Live carbon baseline</p>
-              <h1 className="mt-2 text-3xl font-black tracking-normal text-ink sm:text-4xl">
-                {formatKg(result.monthlyKgCO2e)} CO2e this month
-              </h1>
-              <p className="mt-3 max-w-2xl text-slate-600">
-                Your highest-impact category is {result.topCategory.label.toLowerCase()}.
-                EcoTrack is ready with goals, receipt logging, local alternatives, and AI coaching.
-              </p>
-            </div>
-            <div className="grid place-items-center">
-              <div className="relative grid h-44 w-44 place-items-center rounded-full border-[14px] border-teal-100 bg-white">
-                <span className="text-5xl font-black text-leaf">{result.score}</span>
-                <span className="absolute bottom-9 text-xs font-bold uppercase text-slate-500">score</span>
+    <motion.div 
+      variants={containerVariants}
+      initial="hidden"
+      animate="show"
+      className="grid gap-6"
+    >
+      <motion.div variants={itemVariants} className="flex items-center justify-between mb-2">
+        <div>
+          <h1 className="text-3xl font-display font-bold text-gray-900 dark:text-white">
+            Welcome back, {user?.displayName?.split(' ')[0] || 'Explorer'}
+          </h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">Here is your carbon intelligence overview.</p>
+        </div>
+      </motion.div>
+
+      <section className="grid gap-6 xl:grid-cols-[1.4fr_0.8fr]">
+        <motion.div variants={itemVariants}>
+          <Card className="h-full overflow-hidden relative border-0 shadow-2xl bg-gradient-to-br from-forest-500 to-forest-700 text-white">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
+            <div className="relative z-10 grid gap-6 md:grid-cols-[1fr_220px]">
+              <div>
+                <p className="text-sm font-semibold text-forest-100 uppercase tracking-wider">Live Carbon Baseline</p>
+                <h2 className="mt-2 text-4xl font-black tracking-tight sm:text-5xl">
+                  {formatKg(result.monthlyKgCO2e)} <span className="text-2xl font-medium text-forest-200">CO₂e/mo</span>
+                </h2>
+                <p className="mt-4 max-w-2xl text-forest-100 leading-relaxed">
+                  Your highest-impact category is <span className="font-bold text-white">{result.topCategory.label.toLowerCase()}</span>.
+                  EcoTrack is ready with personalized goals, smart receipt scanning, and AI coaching to help you reduce this.
+                </p>
+              </div>
+              <div className="grid place-items-center">
+                <div className="relative grid h-44 w-44 place-items-center rounded-full border-[10px] border-white/20 backdrop-blur-sm bg-white/10 shadow-inner">
+                  <span className="text-6xl font-black text-white">{result.score}</span>
+                  <span className="absolute bottom-6 text-xs font-bold uppercase tracking-widest text-forest-200">Score</span>
+                </div>
               </div>
             </div>
-          </div>
-        </Card>
-        <Card>
-          <h2 className="text-lg font-bold">Smart next action</h2>
-          <div className="mt-4 rounded-lg bg-slate-50 p-4">
-            <p className="text-sm font-semibold text-slate-500">{result.topCategory.label}</p>
-            <p className="mt-2 text-xl font-black">{result.topCategory.tips[0]}</p>
-          </div>
-        </Card>
+          </Card>
+        </motion.div>
+
+        <motion.div variants={itemVariants}>
+          <Card className="h-full glass-panel dark:bg-gray-800/80 border-0 flex flex-col justify-between">
+            <div>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <Zap className="w-5 h-5 text-earth-500" /> Smart Next Action
+              </h2>
+              <div className="mt-6 rounded-2xl bg-earth-50 dark:bg-earth-900/20 border border-earth-100 dark:border-earth-800/50 p-6 relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-4 opacity-10">
+                  <Leaf className="w-24 h-24 text-earth-600" />
+                </div>
+                <p className="text-sm font-semibold text-earth-600 dark:text-earth-400 uppercase tracking-wider">{result.topCategory.label}</p>
+                <p className="mt-3 text-lg font-bold text-gray-900 dark:text-gray-100 relative z-10 leading-snug">
+                  "{result.topCategory.tips[0]}"
+                </p>
+              </div>
+            </div>
+          </Card>
+        </motion.div>
       </section>
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <StatCard title="Annualized footprint" value={formatKg(result.annualKgCO2e)} icon={<Leaf />} />
-        <StatCard
-          title="Vs global average"
-          value={`${Math.abs(vsGlobal)}% ${vsGlobal > 0 ? 'over' : 'under'}`}
-          icon={vsGlobal > 0 ? <ArrowUpRight /> : <ArrowDownRight />}
-        />
-        <StatCard title="Active goals" value={String(activeGoals)} icon={<Target />} />
-        <StatCard title="Challenges complete" value={String(completedChallenges)} icon={<Award />} />
+        <motion.div variants={itemVariants}>
+          <StatCard title="Annualized Footprint" value={formatKg(result.annualKgCO2e)} icon={<Leaf className="w-6 h-6" />} color="forest" />
+        </motion.div>
+        <motion.div variants={itemVariants}>
+          <StatCard
+            title="Vs Global Average"
+            value={`${Math.abs(vsGlobal)}% ${vsGlobal > 0 ? 'over' : 'under'}`}
+            icon={vsGlobal > 0 ? <ArrowUpRight className="w-6 h-6" /> : <ArrowDownRight className="w-6 h-6" />}
+            color={vsGlobal > 0 ? "danger" : "forest"}
+          />
+        </motion.div>
+        <motion.div variants={itemVariants}>
+          <StatCard title="Active Goals" value={String(activeGoals)} icon={<Target className="w-6 h-6" />} color="earth" />
+        </motion.div>
+        <motion.div variants={itemVariants}>
+          <StatCard title="Challenges Complete" value={String(completedChallenges)} icon={<Award className="w-6 h-6" />} color="sky" />
+        </motion.div>
       </section>
 
-      <section className="grid gap-5 xl:grid-cols-[1fr_0.9fr]">
-        <Card>
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-xl font-black">Footprint trend</h2>
-            <span className="text-sm text-slate-500">monthly kgCO2e</span>
-          </div>
-          <CarbonTrendChart logs={trendLogs} />
-        </Card>
-        <Card>
-          <h2 className="mb-4 text-xl font-black">Category breakdown</h2>
-          <CategoryChart categories={result.categories} />
-        </Card>
+      <section className="grid gap-6 xl:grid-cols-[1fr_0.9fr]">
+        <motion.div variants={itemVariants}>
+          <Card className="glass-panel border-0 h-full">
+            <div className="mb-6 flex items-center justify-between">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Footprint Trend</h2>
+              <span className="text-sm font-medium text-gray-500 bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full">monthly kgCO₂e</span>
+            </div>
+            <CarbonTrendChart logs={trendLogs} />
+          </Card>
+        </motion.div>
+        <motion.div variants={itemVariants}>
+          <Card className="glass-panel border-0 h-full">
+            <h2 className="mb-6 text-xl font-bold text-gray-900 dark:text-white">Category Breakdown</h2>
+            <CategoryChart categories={result.categories} />
+          </Card>
+        </motion.div>
       </section>
-    </div>
+    </motion.div>
   );
 }
 
-function StatCard({ title, value, icon }: { title: string; value: string; icon: JSX.Element }) {
+function StatCard({ title, value, icon, color = "forest" }: { title: string; value: string; icon: JSX.Element, color?: "forest" | "earth" | "danger" | "sky" }) {
+  const colorStyles = {
+    forest: "bg-forest-100 dark:bg-forest-900/30 text-forest-600 dark:text-forest-400",
+    earth: "bg-earth-100 dark:bg-earth-900/30 text-earth-600 dark:text-earth-400",
+    danger: "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400",
+    sky: "bg-sky-100 dark:bg-sky-900/30 text-sky-600 dark:text-sky-400",
+  };
+
   return (
-    <Card className="flex items-center gap-4">
-      <span className="grid h-12 w-12 place-items-center rounded-lg bg-teal-50 text-leaf">{icon}</span>
+    <Card className="glass flex items-center gap-5 border-0 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+      <div className={`grid h-14 w-14 place-items-center rounded-2xl ${colorStyles[color]}`}>
+        {icon}
+      </div>
       <div>
-        <p className="text-sm text-slate-500">{title}</p>
-        <p className="text-2xl font-black">{value}</p>
+        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{title}</p>
+        <p className="text-2xl font-black text-gray-900 dark:text-white">{value}</p>
       </div>
     </Card>
   );

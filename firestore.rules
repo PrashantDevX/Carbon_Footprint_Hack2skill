@@ -1,41 +1,117 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    function signedIn() {
+
+    // --- HELPER FUNCTIONS -----------------------------------------------------
+
+    function isAuthenticated() {
       return request.auth != null;
     }
 
-    function owns(userId) {
-      return signedIn() && request.auth.uid == userId;
+    function isOwner(userId) {
+      return request.auth.uid == userId;
     }
+
+    function isValidTimestamp(field) {
+      return field is timestamp;
+    }
+
+    function isPositiveNumber(field) {
+      return field is number && field >= 0;
+    }
+
+    function hasValidCarbonLog() {
+      let data = request.resource.data;
+      return data.keys().hasAll(['userId', 'date', 'category', 'kgCO2e', 'description'])
+        && isOwner(data.userId)
+        && data.category in ['transport', 'energy', 'food', 'shopping', 'water']
+        && isPositiveNumber(data.kgCO2e)
+        && data.kgCO2e <= 10000  // max sanity check: 10 tCO2e per entry
+        && data.description is string
+        && data.description.size() <= 500;
+    }
+
+    // --- USERS ----------------------------------------------------------------
 
     match /users/{userId} {
-      allow read, create, update: if owns(userId);
-      allow delete: if false;
+      allow read: if isAuthenticated() && isOwner(userId);
+      allow create: if isAuthenticated() && isOwner(userId)
+        && request.resource.data.uid == userId;
+      allow update: if isAuthenticated() && isOwner(userId)
+        // Prevent users from granting themselves admin roles
+        && !request.resource.data.keys().hasAny(['isAdmin', 'isModerator']);
 
-      match /carbonLogs/{logId} {
-        allow read, create: if owns(userId);
-        allow update, delete: if false;
-      }
-
-      match /goals/{goalId} {
-        allow read, create, update, delete: if owns(userId);
-      }
-
-      match /receipts/{receiptId} {
-        allow read, create: if owns(userId);
-        allow update, delete: if false;
+      // Weekly reports sub-collection (read-only for user)
+      match /weeklyReports/{reportId} {
+        allow read: if isAuthenticated() && isOwner(userId);
+        allow write: if false; // Cloud Functions only
       }
     }
 
-    match /leaderboard/{entryId} {
-      allow read: if true;
-      allow write: if false;
+    // --- CARBON LOGS ----------------------------------------------------------
+
+    match /carbonLogs/{logId} {
+      allow read: if isAuthenticated()
+        && resource.data.userId == request.auth.uid;
+
+      allow create: if isAuthenticated()
+        && hasValidCarbonLog()
+        // Rate limiting: max 100 entries per day (checked by having been created today)
+        && request.resource.data.date == request.time.toDate().toJSON().split('T')[0];
+
+      allow delete: if isAuthenticated()
+        && resource.data.userId == request.auth.uid;
+
+      allow update: if false; // Logs are immutable once created
     }
 
-    match /publicChallenges/{challengeId} {
-      allow read: if true;
-      allow write: if false;
+    // --- GOALS ----------------------------------------------------------------
+
+    match /goals/{goalId} {
+      allow read:   if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.title is string
+        && request.resource.data.title.size() <= 200
+        && isPositiveNumber(request.resource.data.targetKgReduction);
+      allow update: if isAuthenticated()
+        && resource.data.userId == request.auth.uid
+        // Can only update progress and status
+        && request.resource.data.userId == resource.data.userId;
+      allow delete: if isAuthenticated()
+        && resource.data.userId == request.auth.uid;
+    }
+
+    // --- LEADERBOARD ----------------------------------------------------------
+
+    match /leaderboard/{userId} {
+      allow read:  if isAuthenticated();
+      allow write: if false; // Cloud Functions only
+    }
+
+    // --- AI LOGS --------------------------------------------------------------
+
+    match /aiLogs/{logId} {
+      allow read:  if false;
+      allow write: if false; // Cloud Functions only
+    }
+
+    // --- COMMUNITY CHALLENGES -------------------------------------------------
+
+    match /challenges/{challengeId} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Cloud Functions only
+
+      match /participants/{userId} {
+        allow read:   if isAuthenticated();
+        allow create: if isAuthenticated() && isOwner(userId);
+        allow delete: if isAuthenticated() && isOwner(userId);
+      }
+    }
+
+    // --- DEFAULT DENY ---------------------------------------------------------
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }

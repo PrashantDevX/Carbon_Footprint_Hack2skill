@@ -1,33 +1,27 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import type { CarbonResult } from '@/types/carbon';
 
-export async function askGemini(prompt: string, result: CarbonResult): Promise<string> {
-  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+const apiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
+
+// Initialize the Gemini API client
+const genAI = new GoogleGenerativeAI(apiKey);
+
+export const geminiModel = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
+
+export async function askGemini(prompt: string, context?: Record<string, unknown>): Promise<string> {
   if (!apiKey) {
-    return localAssistant(prompt, result);
+    return "Error: Gemini API Key is missing. Please add VITE_GEMINI_API_KEY to your .env.local file.";
   }
 
-  const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-  const response = await model.generateContent(`
-    You are EcoTrack, a practical carbon reduction coach.
-    User monthly footprint: ${result.monthlyKgCO2e} kgCO2e.
-    Top category: ${result.topCategory.label} at ${result.topCategory.kgCO2e} kgCO2e.
-    Give concise, specific advice. User asks: ${prompt}
-  `);
+  try {
+    const fullPrompt = context 
+      ? `System Context: You are an EcoTrack Assistant, a smart carbon footprint expert.\nUser Carbon Data: ${JSON.stringify(context)}\n\nUser Query: ${prompt}`
+      : prompt;
 
-  return response.response.text();
-}
-
-function localAssistant(prompt: string, result: CarbonResult) {
-  const lowered = prompt.toLowerCase();
-  if (lowered.includes('quick') || lowered.includes('today')) {
-    return `Today, focus on ${result.topCategory.label.toLowerCase()}: ${result.topCategory.tips[0]} That is your biggest lever at ${result.topCategory.kgCO2e} kgCO2e/month.`;
+    const result = await geminiModel.generateContent(fullPrompt);
+    const response = await result.response;
+    return response.text();
+  } catch (error) {
+    console.error("Gemini API Error:", error);
+    return "Sorry, I couldn't process that request. Please ensure your API key is valid and you have an internet connection.";
   }
-
-  if (lowered.includes('goal')) {
-    return `Set a 30-day ${result.topCategory.label.toLowerCase()} goal for about ${Math.round(result.topCategory.kgCO2e * 0.12)} kgCO2e. Keep it small enough to finish, then stack a second habit.`;
-  }
-
-  return `Your current footprint is ${result.monthlyKgCO2e} kgCO2e/month with a score of ${result.score}. The highest-impact area is ${result.topCategory.label}. Start with: ${result.topCategory.tips.join(' ')}`;
 }

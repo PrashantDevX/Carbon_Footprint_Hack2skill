@@ -1,16 +1,21 @@
 {
-  "name": "EcoTrack Carbon Intelligence",
+  "name": "EcoTrack - Carbon Footprint Intelligence",
   "short_name": "EcoTrack",
-  "description": "AI-powered carbon footprint dashboard and reduction coach.",
+  "description": "AI-powered carbon footprint tracker",
   "start_url": "/",
   "display": "standalone",
-  "theme_color": "#0f766e",
-  "background_color": "#f7faf8",
+  "background_color": "#ffffff",
+  "theme_color": "#16a34a",
+  "orientation": "portrait-primary",
+  "categories": ["environment", "health", "utilities"],
+  "lang": "en",
   "icons": [
-    {
-      "src": "/favicon.svg",
-      "sizes": "64x64",
-      "type": "image/svg+xml"
-    }
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Log Transport",     "url": "/calculator?tab=transport", "icons": [{ "src": "/icons/transport.png", "sizes": "96x96" }] },
+    { "name": "Chat with AI",      "url": "/assistant",                "icons": [{ "src": "/icons/ai.png",        "sizes": "96x96" }] }
   ]
 }
