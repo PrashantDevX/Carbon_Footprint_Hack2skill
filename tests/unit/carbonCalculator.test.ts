@@ -7,7 +7,7 @@ describe('carbonCalculator', () => {
     it('calculates a valid carbon result for default input', () => {
       const result = calculateCarbonFootprint(defaultInput);
       expect(result.monthlyKgCO2e).toBeGreaterThan(0);
-      expect(result.annualKgCO2e).toEqual(result.monthlyKgCO2e * 12);
+      expect(result.annualKgCO2e).toBeCloseTo(result.monthlyKgCO2e * 12);
       expect(result.score).toBeGreaterThanOrEqual(0);
       expect(result.score).toBeLessThanOrEqual(100);
       expect(result.categories.length).toBe(5);

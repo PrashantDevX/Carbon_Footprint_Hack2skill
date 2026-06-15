@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Send, Bot, User, Sparkles } from 'lucide-react';
 import { askGemini } from '@/lib/gemini';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCarbon } from '@/hooks/useCarbon';
 
 interface Message {
   id: string;
@@ -11,8 +12,15 @@ interface Message {
   timestamp: Date;
 }
 
+const SUGGESTED_PROMPTS = [
+  'What is my biggest source of emissions?',
+  'Give me 3 quick wins to cut my footprint',
+  'How does my score compare to a good target?'
+];
+
 export function Assistant() {
   const { user } = useAuth();
+  const { result } = useCarbon();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 'welcome',
@@ -33,27 +41,34 @@ export function Assistant() {
     scrollToBottom();
   }, [messages]);
 
-  const handleSend = async (e?: React.FormEvent) => {
-    e?.preventDefault();
-    if (!input.trim() || isLoading) return;
+  const sendMessage = async (text: string) => {
+    const trimmed = text.trim();
+    if (!trimmed || isLoading) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
-      content: input,
+      content: trimmed,
       timestamp: new Date()
     };
 
-    setMessages(prev => [...prev, userMessage]);
+    setMessages((prev) => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
 
     try {
-      // In a real app, we'd pass the user's carbon context (from Zustand or Firestore) here.
+      // Inject the user's *real* carbon context so Gemini can reason about
+      // their actual highest-impact category rather than generic advice.
       const aiResponse = await askGemini(userMessage.content, {
         displayName: user?.displayName,
-        totalCarbonScore: 420, // Mock context
-        recentLogs: []
+        monthlyKgCO2e: Math.round(result.monthlyKgCO2e),
+        annualKgCO2e: Math.round(result.annualKgCO2e),
+        score: result.score,
+        topCategory: result.topCategory?.category,
+        categoryBreakdown: result.categories?.map((c) => ({
+          category: c.category,
+          kgCO2e: Math.round(c.kgCO2e)
+        }))
       });
 
       const assistantMessage: Message = {
@@ -63,12 +78,26 @@ export function Assistant() {
         timestamp: new Date()
       };
 
-      setMessages(prev => [...prev, assistantMessage]);
+      setMessages((prev) => [...prev, assistantMessage]);
     } catch (error) {
       console.error(error);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: "Sorry, something went wrong. Please try again.",
+          timestamp: new Date()
+        }
+      ]);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSend = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    await sendMessage(input);
   };
 
   return (
@@ -81,7 +110,7 @@ export function Assistant() {
           <h1 className="text-2xl font-bold font-display text-gray-900 dark:text-white">
             AI Sustainability Assistant
           </h1>
-          <p className="text-gray-500 dark:text-gray-400">Powered by Gemini 1.5 Pro</p>
+          <p className="text-gray-500 dark:text-gray-400">Powered by Google Gemini · context-aware</p>
         </div>
       </div>
 
@@ -142,12 +171,28 @@ export function Assistant() {
 
         {/* Input Area */}
         <div className="p-4 bg-white/80 dark:bg-gray-800/80 border-t border-gray-200 dark:border-gray-700 backdrop-blur-md">
+          {messages.length <= 1 && (
+            <div className="flex flex-wrap gap-2 mb-3" role="group" aria-label="Suggested questions">
+              {SUGGESTED_PROMPTS.map((prompt) => (
+                <button
+                  key={prompt}
+                  type="button"
+                  onClick={() => sendMessage(prompt)}
+                  disabled={isLoading}
+                  className="text-xs sm:text-sm px-3 py-1.5 rounded-full border border-forest-200 dark:border-forest-800 bg-forest-50 dark:bg-forest-900/30 text-forest-700 dark:text-forest-300 hover:bg-forest-100 dark:hover:bg-forest-900/50 transition-colors disabled:opacity-50"
+                >
+                  {prompt}
+                </button>
+              ))}
+            </div>
+          )}
           <form onSubmit={handleSend} className="relative flex items-center">
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask about reducing your carbon footprint..."
+              aria-label="Message the AI assistant"
               className="w-full bg-gray-100 dark:bg-gray-900 border-transparent focus:border-forest-500 focus:bg-white dark:focus:bg-gray-800 rounded-xl px-4 py-3 pr-12 transition-all outline-none text-gray-800 dark:text-gray-200"
               disabled={isLoading}
             />

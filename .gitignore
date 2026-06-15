@@ -11,3 +11,4 @@ playwright-report/
 test-results/
 functions/node_modules/
 functions/lib/
+ECOTRACK_COMPLETE_DEV_GUIDE.md

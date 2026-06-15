@@ -2,6 +2,7 @@ import { NavLink, Outlet } from 'react-router-dom';
 import { BarChart3, Bot, Calculator, Camera, Flag, MapPinned, Medal, Settings, Sprout } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { SkipLink } from '@/components/ui/SkipLink';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 
@@ -75,7 +76,8 @@ export function AppLayout() {
               </span>
               <p className="text-lg font-display font-black text-gray-900 dark:text-white">EcoTrack</p>
             </div>
-            <div className="ml-auto flex items-center gap-4">
+            <div className="ml-auto flex items-center gap-3 sm:gap-4">
+              <ThemeToggle />
               <div className="hidden text-right sm:block">
                 <p className="text-sm font-bold text-gray-900 dark:text-white">{user.displayName}</p>
                 <p className="text-xs font-medium text-forest-600 dark:text-forest-400">{user.points || 0} points</p>

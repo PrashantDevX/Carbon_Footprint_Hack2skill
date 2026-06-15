@@ -1,40 +1,204 @@
-# EcoTrack — Carbon Footprint Intelligence
+# 🌍 EcoTrack — Carbon Footprint Intelligence
 
-## 🌍 Overview
-EcoTrack is a robust, AI-powered carbon footprint tracker and intelligence platform designed to help users understand, measure, and reduce their environmental impact effectively. By integrating **Google Gemini** for intelligent tracking, **Cloud Vision API** for receipt scanning, and **Green Map / Leaderboards** for community engagement, it offers a seamless experience that gamifies and standardizes the user's path toward sustainability.
+> An AI-powered, gamified carbon footprint tracker that turns everyday habits into an actionable sustainability journey.
 
-## 🎯 Chosen Vertical
-**Sustainable Tech (Climate Tech / ESG)**
-The solution is rooted in equipping individuals to combat climate change, making it directly aligned with Sustainable Technology by targeting behavioral habit shifts through gamification, local insights, and AI-driven coaching.
+[![Built with React](https://img.shields.io/badge/React-18-149eca)](https://react.dev)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178c6)](https://www.typescriptlang.org)
+[![Firebase](https://img.shields.io/badge/Firebase-Hosting%20%7C%20Auth%20%7C%20Firestore-ffca28)](https://firebase.google.com)
+[![Gemini](https://img.shields.io/badge/Google-Gemini-4285F4)](https://ai.google.dev)
 
-## 🧠 Approach and Logic
-EcoTrack transforms raw data (such as energy bills or food habits) into an actionable and readable carbon profile.
-- **Categorization Layer**: The carbon engine calculates emissions across five main vectors: *Transport, Energy, Food, Shopping, and Water*.
-- **AI-Powered Recommendations Layer**: Integrating Google Gemini 1.5 allows the platform to move beyond static tips. It analyzes the specific area of highest impact and proposes tailored strategies (e.g. suggesting an EV vs hybrid based on the user's energy grid factors).
-- **Gamification Layer**: Achievements, Goals, and Leaderboards (using relative Carbon Scores) provide positive reinforcement. A score threshold system (0-100) translates bulky kgCO₂e values into an intuitive grading methodology.
-- **Scanner Subsystem**: Uses Cloud Vision API to analyze physical receipts. The extraction mechanism uses Natural Language Processing to detect unit metrics and item types, calculating carbon estimates per receipt in real-time.
+---
+
+## 🎯 Chosen Vertical — Sustainable Tech (Climate / ESG)
+
+EcoTrack equips **individuals** to understand, measure, and reduce their personal carbon
+footprint. The persona is the *climate-curious everyday user* who wants to act but lacks
+the data literacy to know **where** their impact actually comes from. The product's job is
+to do that reasoning for them and coach them toward the highest-leverage changes.
+
+---
+
+## 🧠 Approach & Logic
+
+EcoTrack is a **smart, context-aware assistant**: it turns raw lifestyle data into a
+readable carbon profile and then makes *decisions on the user's behalf* about what to
+recommend next.
+
+| Layer | What it does |
+|-------|--------------|
+| **Categorization Engine** | Calculates emissions across five vectors — *Transport, Energy, Food, Shopping, Water* — using EPA/IPCC-derived factors (`src/lib/carbonFactors.ts`). |
+| **Scoring Engine** | Translates bulky `kgCO₂e` values into an intuitive 0–100 score so users get instant, comparable feedback (`src/lib/carbonCalculator.ts`). |
+| **AI Recommendation Layer** | **Google Gemini** receives the user's *actual* emission breakdown via context injection, so it targets the user's single biggest source instead of giving generic tips. A model-fallback chain keeps the assistant working even if a model is deprecated. |
+| **Insights Engine** | A pure, deterministic engine (`src/lib/insights.ts`) reads the user's inputs and generates **ranked, quantified** recommendations — each only fires when the data shows a genuinely reducible source, sorted by estimated kgCO₂e saved. |
+| **Gamification Layer** | Goals, achievements, and a relative-score leaderboard drive habit formation. |
+| **Scanner Subsystem** | **Cloud Vision API** (via a Cloud Function) reads receipts, extracts items, and estimates their embedded carbon in real time. |
+
+### Why this is "logical decision making based on user context"
+The assistant never asks the user to diagnose themselves. It computes the **top emitting
+category**, injects that into the Gemini system prompt behind the scenes, and tailors
+advice (e.g. recommending an EV vs. hybrid based on the user's grid mix). The decision of
+*what to coach* is made by the app, not the user.
+
+---
 
 ## 🚀 How the Solution Works
-1. **Onboarding & Initialization**: Users complete a quick wizard. Firebase Auth registers the user, and an initial `UserProfile` document is saved into Firestore.
-2. **Dashboard & Calculator**: The user can log travel distances, food intake, and energy consumption through targeted modules. `useCarbonLogs` (powered by *TanStack Request*) syncs the data efficiently with Cloud Firestore.
-3. **Receipt Scanning**: A user uploads a receipt image. The React client passes the image (via Firebase Storage) to a **Cloud Function**, which triggers **Google Cloud Vision API** to extract item text, match items against carbon factors, and return estimated values.
-4. **Smart AI Assistant**: A dedicated Gemini chatbot uses *User Context Injection*. We parse the current `kgCO2e` emissions into the system prompt behind-the-scenes so Gemini knows exactly where the user struggles without asking them to prompt it manually.
-5. **Real-time Observability**: Performance, user activity events, and Firebase App Checks wrap the application ensuring endpoints are rate-limited, metrics observed effectively, and rules properly followed.
+
+1. **Auth & Onboarding** — Sign in with **Google** or **Guest (anonymous)**. A `UserProfile`
+   document is created in Firestore on first login.
+2. **Dashboard & Calculator** — Log transport, food, and energy use. `useCarbon` (TanStack
+   Query) syncs efficiently with Firestore and invalidates only what changed.
+3. **Receipt Scanning** — Upload a receipt → Cloud Function → Cloud Vision OCR → carbon
+   estimate returned to the client.
+4. **AI Assistant** — Gemini chatbot with the user's live emission context pre-loaded.
+5. **Gamification** — Goals, streaks, and a leaderboard built on relative carbon scores.
+
+---
+
+## 🏗️ Tech Stack & Architecture
+
+- **Frontend:** React 18 · TypeScript · Vite · Tailwind CSS · Framer Motion
+- **State/Data:** Zustand (local) · TanStack Query (server cache)
+- **Backend:** Firebase Auth · Cloud Firestore · Cloud Functions · Cloud Storage
+- **AI / GCP:** Google Gemini · Cloud Vision API · Google Maps
+- **Quality:** Vitest (unit) · Playwright (E2E) · ESLint + jsx-a11y · Prettier
+
+**Separation of concerns:** `components/` (UI) · `pages/` (routes) · `hooks/` ·
+`store/` · `contexts/` · `lib/` (API + pure logic) · `types/`.
+
+---
+
+## 🔐 Security & Configuration
+
+- **Firebase App Check** (reCAPTCHA v3) guards backend endpoints against abuse. It is
+  initialised defensively (`src/lib/appCheck.ts`) — it no-ops when no valid key is present
+  so the app never breaks in dev or on misconfiguration.
+- **Row-level Firestore Security Rules** (`firestore.rules`) enforce per-user ownership,
+  immutable carbon logs, server-only leaderboard writes, and a default-deny fallback.
+- **Hardened HTTP headers** in `firebase.json`: a strict **Content-Security-Policy**,
+  `X-Content-Type-Options`, `Referrer-Policy`, and a scoped `Permissions-Policy`.
+- **No secrets in the repo** — all keys come from environment variables (`.env.local`).
+
+> ⚠️ **CSP note (important for deployment):** The CSP `script-src`/`connect-src` must allow
+> `https://www.google.com`, `https://apis.google.com`, and `https://accounts.google.com`
+> for **Google Sign-in + reCAPTCHA/App Check** to work. This is already configured in
+> `firebase.json`. **The CSP only takes effect once `firebase deploy` is run** — an outdated
+> deployed CSP is the usual cause of "can't log in" errors in the browser console.
+
+---
+
+## 🛠️ Local Development
+
+### Prerequisites
+- Node.js 18+
+- A Firebase project (Auth, Firestore, Storage enabled)
+- Firebase CLI: `npm install -g firebase-tools`
+
+### Setup
+```bash
+# 1. Install dependencies
+npm install
+
+# 2. Configure environment
+cp .env.example .env.local
+#   → fill in your Firebase + Gemini + Maps keys
+
+# 3. Run the dev server
+npm run dev          # http://localhost:5173
+```
+
+### Enable the sign-in methods (one-time, in Firebase Console)
+1. **Authentication → Sign-in method** → enable **Google** and **Anonymous**.
+2. **Authentication → Settings → Authorized domains** → add your hosting domain
+   (`<project>.web.app`) and `localhost`.
+
+### Useful scripts
+| Command | Purpose |
+|---------|---------|
+| `npm run dev` | Start Vite dev server |
+| `npm run build` | Type-check + production build |
+| `npm test` | Run unit tests (Vitest) |
+| `npm run test:e2e` | Run E2E tests (Playwright) |
+| `npm run lint` | Lint with zero-warning policy |
+| `npm run emulators` | Start Firebase emulators |
+| `npm run deploy` | Build + deploy everything to Firebase |
+| `npm run deploy:rules` | Deploy only Firestore/Storage rules |
+
+---
+
+## 🚢 Deployment
+
+```bash
+npm run build
+firebase deploy            # hosting + rules + functions
+# or just the site:
+firebase deploy --only hosting
+```
+
+After deploying, **hard-refresh** the live site (Ctrl+Shift+R) so the browser picks up the
+new CSP headers.
+
+### Troubleshooting "I can't log in"
+| Symptom in console | Cause | Fix |
+|--------------------|-------|-----|
+| `Loading the script 'https://www.google.com/recaptcha/api.js' violates … CSP` | Deployed CSP is stale / too strict | Run `firebase deploy --only hosting` to publish the CSP in `firebase.json` |
+| `auth/unauthorized-domain` | Domain not whitelisted | Add the domain under **Auth → Settings → Authorized domains** |
+| `auth/operation-not-allowed` | Provider disabled | Enable Google / Anonymous in **Auth → Sign-in method** |
+| Popup closes instantly | Browser blocks popups | App auto-falls back to `signInWithRedirect` |
+
+---
+
+## 🧪 Testing
+
+- **Unit:** `src/lib/carbonCalculator` is covered by Vitest (`tests/unit`) — validates score
+  bounds, top-category detection, and zero-input handling.
+- **E2E:** Playwright config (`npm run test:e2e`) for critical user flows.
+
+---
+
+## ♿ Accessibility
+
+Targets **WCAG 2.1 AA**: a skip-link, semantic landmarks, `aria-live` error announcements,
+`aria-busy` on async buttons, `aria-hidden` on decorative icons, a global
+`:focus-visible` keyboard indicator, `role="radiogroup"` theme controls,
+`prefers-reduced-motion` support, light **and dark** themes with accessible contrast, and
+keyboard-navigable controls throughout. `eslint-plugin-jsx-a11y` enforces these in CI.
+
+## 🎨 Theming
+
+A `ThemeProvider` (`src/contexts/ThemeContext.tsx`) provides light/dark modes that:
+- respect the OS `prefers-color-scheme` on first visit,
+- persist the user's explicit choice in `localStorage`,
+- expose a one-click toggle in the header and a full control panel in **Settings**.
+
+---
 
 ## 📌 Assumptions Made
-- Users have roughly average habits absent of explicit input. We default values using generalized local EPA and IPCC emission factors where direct user data may lack granularity.
-- Gamification drives continued daily usage. Building a streak system encourages people to log minor behavioral shifts.
-- Scanning confidence: The text parsing from OCR relies on common store abbreviations. A heuristic fallback value (0.12) is assigned if an item's description is unidentifiable.
-- "EcoPoints" translate to badges based on simple linear growth, meaning every reduction action uniformly benefits the user's gamified profile.
 
-## 🛡️ Architecture & Core Adherence
-* **Code Quality**: Built with **React 18, TypeScript, and Vite**. Separation of concerns utilized extensively across Hooks (`/hooks`), Stores (`/store`), UI components (`/components`), and API connectors (`/lib`).
-* **Security**: Incorporates **Firebase App Check** to fend off abused endpoints, alongside extensive row-level **Firestore Security Rules** ensuring authorized mutation access and data encapsulation.
-* **Efficiency**: TanStack Query invalidation prevents unnecessary document refetching. Lazy loading of heavy components (`import()`) guarantees smooth navigation.
-* **Testing**: Set up to execute E2E tests optimally structured via **Playwright** and robust Unit Tests running strictly on **Vitest**.
-* **Accessibility**: Fully compatible with WCAG 2.1 AA. Built-in skip-links, ARIA tags, and accessible contrast thresholds guarantee seamless inclusivity across the suite.
+- Where the user doesn't provide granular data, we default to generalized **EPA/IPCC**
+  emission factors.
+- A heuristic fallback factor (`0.12`) is assigned to unrecognised receipt line items.
+- Gamification drives retention — streaks reward small, repeated behavioural shifts.
+- "EcoPoints" grow linearly so every reduction action rewards the user predictably.
 
-## setup locally
-Run \`npm install\` to acquire client dependencies.
-Proceed with setting up `.env.local` replicating `.env.example`.
-Run \`npm run dev\` and explore EcoTrack locally.
+---
+
+## 📂 Project Structure
+
+```
+src/
+├── components/    # Reusable UI (ui, charts, layout)
+├── contexts/      # AuthContext (auth state + Firestore profile)
+├── hooks/         # useCarbon, useNotifications
+├── lib/           # firebase, gemini, appCheck, carbon engine, analytics
+├── pages/         # Route components (Auth, Dashboard, Calculator, …)
+├── store/         # Zustand stores
+└── types/         # Shared TypeScript types
+functions/         # Cloud Functions (receipt scan, scheduled reports)
+firestore.rules    # Row-level security rules
+firebase.json      # Hosting config + security headers (CSP)
+```
+
+---
+
+Built for a Sustainable-Tech hackathon — focused on **code quality, security, efficiency,
+testing, and accessibility**.

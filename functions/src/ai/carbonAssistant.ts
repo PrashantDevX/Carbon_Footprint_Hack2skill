@@ -22,7 +22,7 @@ export const carbonAssistant = onCall({ region: 'us-central1', cors: true }, asy
     };
   }
 
-  const model = new GoogleGenerativeAI(apiKey).getGenerativeModel({ model: 'gemini-1.5-flash' });
+  const model = new GoogleGenerativeAI(apiKey).getGenerativeModel({ model: 'gemini-3.1-flash-lite' });
   const result = await model.generateContent(
     `Act as EcoTrack carbon coach. Footprint ${parsed.monthlyKgCO2e} kgCO2e/month. Top category ${parsed.topCategory}. User: ${parsed.prompt}`
   );

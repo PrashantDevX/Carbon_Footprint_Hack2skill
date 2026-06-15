@@ -8,15 +8,19 @@ interface FieldProps extends InputHTMLAttributes<HTMLInputElement> {
 export function Field({ label, suffix, id, ...props }: FieldProps) {
   const fieldId = id ?? label.toLowerCase().replace(/\s+/g, '-');
   return (
-    <label className="grid gap-1 text-sm font-medium text-slate-700" htmlFor={fieldId}>
+    <label className="grid gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor={fieldId}>
       <span>{label}</span>
-      <span className="flex overflow-hidden rounded-md border border-slate-300 bg-white focus-within:ring-2 focus-within:ring-leaf">
+      <span className="flex overflow-hidden rounded-xl border border-gray-300 bg-white focus-within:ring-2 focus-within:ring-forest-500 dark:border-gray-600 dark:bg-gray-900">
         <input
           id={fieldId}
-          className="min-h-11 w-full border-0 px-3 text-base outline-none"
+          className="min-h-11 w-full border-0 bg-transparent px-3 text-base text-gray-900 outline-none placeholder:text-gray-400 dark:text-gray-100"
           {...props}
         />
-        {suffix ? <span className="grid min-w-12 place-items-center bg-slate-100 px-2 text-xs text-slate-600">{suffix}</span> : null}
+        {suffix ? (
+          <span className="grid min-w-12 place-items-center bg-gray-100 px-2 text-xs text-gray-600 dark:bg-gray-800 dark:text-gray-400">
+            {suffix}
+          </span>
+        ) : null}
       </span>
     </label>
   );
@@ -30,11 +34,11 @@ interface SelectFieldProps extends SelectHTMLAttributes<HTMLSelectElement> {
 export function SelectField({ label, id, options, ...props }: SelectFieldProps) {
   const fieldId = id ?? label.toLowerCase().replace(/\s+/g, '-');
   return (
-    <label className="grid gap-1 text-sm font-medium text-slate-700" htmlFor={fieldId}>
+    <label className="grid gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor={fieldId}>
       <span>{label}</span>
       <select
         id={fieldId}
-        className="min-h-11 rounded-md border border-slate-300 bg-white px-3 text-base outline-none focus:ring-2 focus:ring-leaf"
+        className="min-h-11 rounded-xl border border-gray-300 bg-white px-3 text-base text-gray-900 outline-none focus:ring-2 focus:ring-forest-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
         {...props}
       >
         {options.map((option) => (

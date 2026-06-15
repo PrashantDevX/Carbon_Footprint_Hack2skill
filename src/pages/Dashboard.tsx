@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { ArrowDownRight, ArrowUpRight, Award, Leaf, Target, Zap } from 'lucide-react';
 import { CategoryChart } from '@/components/charts/CategoryChart';
 import { CarbonTrendChart } from '@/components/charts/CarbonTrendChart';
+import { InsightsPanel } from '@/components/InsightsPanel';
 import { Card } from '@/components/ui/Card';
 import { useCarbon } from '@/hooks/useCarbon';
 import { defaultInput } from '@/lib/defaultData';
@@ -132,6 +133,10 @@ export function Dashboard() {
           </Card>
         </motion.div>
       </section>
+
+      <motion.section variants={itemVariants}>
+        <InsightsPanel />
+      </motion.section>
     </motion.div>
   );
 }
