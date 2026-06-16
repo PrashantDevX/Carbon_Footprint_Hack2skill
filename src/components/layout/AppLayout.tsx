@@ -24,7 +24,7 @@ export function AppLayout() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-earth-50 dark:bg-forest-950 text-gray-900 dark:text-gray-100 transition-colors duration-300">
+    <div className="min-h-screen text-gray-900 dark:text-gray-100 transition-colors duration-300">
       <NatureBackdrop />
       <SkipLink />
       <aside className="fixed inset-y-0 left-0 z-20 hidden w-64 border-r border-gray-200/50 dark:border-gray-800/50 bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl px-4 py-5 lg:block shadow-2xl shadow-forest-900/5 dark:shadow-black/20">
@@ -69,7 +69,7 @@ export function AppLayout() {
           ))}
         </nav>
       </aside>
-      <div className="lg:pl-64 flex flex-col min-h-screen">
+      <div className="relative z-10 lg:pl-64 flex flex-col min-h-screen">
         <header className="sticky top-0 z-10 border-b border-gray-200/50 dark:border-gray-800/50 bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl transition-colors duration-300">
           <div className="flex min-h-16 items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
             <div className="lg:hidden flex items-center gap-2">

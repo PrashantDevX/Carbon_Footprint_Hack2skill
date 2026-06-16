@@ -9,12 +9,27 @@
 
 ---
 
-## 🎯 Chosen Vertical — Sustainable Tech (Climate / ESG)
+## 🎯 Chosen Challenge — Carbon Footprint Awareness Platform (Challenge 3)
+
+> *"Design a solution that helps individuals understand, track, and reduce their carbon
+> footprint through simple actions and personalized insights."*
 
 EcoTrack equips **individuals** to understand, measure, and reduce their personal carbon
 footprint. The persona is the *climate-curious everyday user* who wants to act but lacks
 the data literacy to know **where** their impact actually comes from. The product's job is
 to do that reasoning for them and coach them toward the highest-leverage changes.
+
+### How EcoTrack maps to the three pillars of the challenge
+
+| Pillar | Where it lives | What the user gets |
+|--------|----------------|--------------------|
+| **Understand** | Calculator + Dashboard + category charts (`carbonCalculator.ts`) | Lifestyle inputs become a clear 0–100 score and a per-category `kgCO₂e` breakdown, benchmarked against national & global averages. |
+| **Track** | Carbon log, trend chart, goals & streaks (`carbonStore.ts`) | Every saved snapshot is logged so the user can watch their footprint move over time and against reduction goals. |
+| **Reduce** | Insights engine + one-tap *“Set as goal”* + AI assistant (`insights.ts`) | Ranked, quantified, **simple actions** — each tied to the user's own data — that convert directly into a tracked goal. |
+
+**The core loop is closed:** *understand → see your biggest source → accept a simple action →
+it becomes a tracked goal → watch the number fall.* That "personalized insight to simple
+action" pathway is the heart of Challenge 3, and it is one tap end-to-end.
 
 ---
 
@@ -31,7 +46,7 @@ recommend next.
 | **AI Recommendation Layer** | **Google Gemini** receives the user's *actual* emission breakdown via context injection, so it targets the user's single biggest source instead of giving generic tips. A model-fallback chain keeps the assistant working even if a model is deprecated. |
 | **Insights Engine** | A pure, deterministic engine (`src/lib/insights.ts`) reads the user's inputs and generates **ranked, quantified** recommendations — each only fires when the data shows a genuinely reducible source, sorted by estimated kgCO₂e saved. |
 | **Gamification Layer** | Goals, achievements, and a relative-score leaderboard drive habit formation. |
-| **Scanner Subsystem** | **Cloud Vision API** (via a Cloud Function) reads receipts, extracts items, and estimates their embedded carbon in real time. |
+| **Scanner Subsystem** | **Gemini multimodal vision** (`analyzeReceiptImage`) reads a receipt photo, extracts each line item, and estimates its embedded carbon in real time — with a keyword heuristic (`estimateReceiptItemKg`) as an offline fallback. |
 
 ### Why this is "logical decision making based on user context"
 The assistant never asks the user to diagnose themselves. It computes the **top emitting
@@ -47,12 +62,16 @@ advice (e.g. recommending an EV vs. hybrid based on the user's grid mix). The de
    re-synced from the provider on every login, so a Google account is never shown as a
    guest. A working account menu (header + Settings) handles sign-out.
 2. **Dashboard** — Quick-action tiles for fast access, live score, stat cards, trend +
-   category charts, and a personalized **Insights** panel.
+   category charts, and a personalized **Insights** panel where every recommendation has a
+   one-tap **“Set as goal”** button that turns a simple action into a tracked goal.
 3. **Calculator** — A friendly, tabbed slider interface (Transport / Energy / Food /
    Shopping / Water) with an instant live footprint snapshot.
 4. **Receipt Scanning** — Upload **or photograph** a receipt; **Gemini Vision** reads the
    items, estimates each item's carbon, and the result is added to your log.
-5. **AI Assistant** — Gemini chatbot with the user's live emission breakdown pre-loaded.
+5. **AI Assistant** — A Gemini chatbot with the user's live emission breakdown pre-loaded.
+   It keeps **multi-session chat history** (persisted locally), renders replies as safe
+   Markdown, offers starter prompts, and rate-limits anonymous guests to a few free
+   messages before inviting sign-in.
 6. **Green Map** — A live Google Map (Places API) showing nearby transit, cycling,
    recycling, and refill spots, with a styled demo fallback when no key is set.
 7. **Goals & Gamification** — Create/track reduction goals with progress bars, complete
@@ -156,9 +175,17 @@ new CSP headers.
 
 ## 🧪 Testing
 
-- **Unit:** `src/lib/carbonCalculator` is covered by Vitest (`tests/unit`) — validates score
-  bounds, top-category detection, and zero-input handling.
+- **Unit (27 tests, Vitest):**
+  - `carbonCalculator` — score bounds, top-category detection, zero-input and heavy-footprint
+    handling, plus the receipt keyword-estimator (`estimateReceiptItemKg`).
+  - `insights` — verifies recommendations only fire on genuinely reducible sources and are
+    ranked by impact.
+  - `carbonStore` / `chatStore` — goal add/remove, receipt pruning, chat-session titling,
+    history pruning, and guest rate-limit counters.
+  - `authErrors` — friendly mapping of Firebase auth error codes.
 - **E2E:** Playwright config (`npm run test:e2e`) for critical user flows.
+
+Run everything with `npm test`.
 
 ---
 
@@ -186,6 +213,10 @@ A `ThemeProvider` (`src/contexts/ThemeContext.tsx`) provides light/dark modes th
 - A heuristic fallback factor (`0.12`) is assigned to unrecognised receipt line items.
 - Gamification drives retention — streaks reward small, repeated behavioural shifts.
 - "EcoPoints" grow linearly so every reduction action rewards the user predictably.
+- Carbon inputs, logs, goals, and chat history persist locally (Zustand + `localStorage`)
+  for instant, offline-friendly UX; Firestore + rules are wired for authenticated sync.
+- Anonymous **guests** get a small free allowance of AI messages, then are nudged to sign
+  in — a deliberate, abuse-resistant trade-off between try-before-you-buy and cost control.
 
 ---
 

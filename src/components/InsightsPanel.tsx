@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Lightbulb, TrendingDown, Sparkles } from 'lucide-react';
+import { Lightbulb, TrendingDown, Sparkles, Plus, Check } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { generateInsights, totalPotentialSaving } from '@/lib/insights';
 import { useCarbon } from '@/hooks/useCarbon';
+import { GOAL_HORIZON_DAYS } from '@/lib/constants';
 
 const effortStyles: Record<string, string> = {
   easy: 'bg-forest-100 text-forest-700 dark:bg-forest-900/40 dark:text-forest-300',
@@ -11,10 +13,21 @@ const effortStyles: Record<string, string> = {
 };
 
 export function InsightsPanel() {
-  const { input, result } = useCarbon();
+  const { input, result, addGoal } = useCarbon();
+  const [addedIds, setAddedIds] = useState<Set<string>>(new Set());
   const insights = generateInsights(input, result);
   const totalSaving = totalPotentialSaving(insights);
   const topInsights = insights.slice(0, 4);
+
+  const handleSetGoal = (insight: (typeof insights)[number]) => {
+    addGoal({
+      title: insight.title,
+      category: insight.category,
+      targetKg: Math.max(1, Math.round(insight.potentialMonthlySaving)),
+      dueDate: new Date(Date.now() + GOAL_HORIZON_DAYS * 24 * 60 * 60 * 1000).toISOString()
+    });
+    setAddedIds((prev) => new Set(prev).add(insight.id));
+  };
 
   return (
     <Card className="h-full">
@@ -69,11 +82,32 @@ export function InsightsPanel() {
               <p className="mt-1.5 text-sm leading-relaxed text-gray-600 dark:text-gray-400">
                 {insight.description}
               </p>
-              {insight.potentialMonthlySaving > 0 && (
-                <p className="mt-2 text-sm font-bold text-forest-600 dark:text-forest-400">
-                  Save up to {insight.potentialMonthlySaving} kg CO₂e / month
-                </p>
-              )}
+              <div className="mt-3 flex items-center justify-between gap-3">
+                {insight.potentialMonthlySaving > 0 ? (
+                  <p className="text-sm font-bold text-forest-600 dark:text-forest-400">
+                    Save up to {insight.potentialMonthlySaving} kg CO₂e / month
+                  </p>
+                ) : (
+                  <span />
+                )}
+                <button
+                  type="button"
+                  onClick={() => handleSetGoal(insight)}
+                  disabled={addedIds.has(insight.id)}
+                  className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-forest-500 ${
+                    addedIds.has(insight.id)
+                      ? 'cursor-default bg-forest-100 text-forest-700 dark:bg-forest-900/40 dark:text-forest-300'
+                      : 'bg-gray-900 text-white hover:bg-gray-700 dark:bg-forest-600 dark:hover:bg-forest-700'
+                  }`}
+                  aria-label={`Set "${insight.title}" as a goal`}
+                >
+                  {addedIds.has(insight.id) ? (
+                    <><Check className="h-3.5 w-3.5" aria-hidden="true" /> Added</>
+                  ) : (
+                    <><Plus className="h-3.5 w-3.5" aria-hidden="true" /> Set as goal</>
+                  )}
+                </button>
+              </div>
             </motion.li>
           ))}
         </ul>

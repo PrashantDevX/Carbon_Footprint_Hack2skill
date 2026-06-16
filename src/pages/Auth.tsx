@@ -50,16 +50,16 @@ export function Auth() {
   const isLoading = pending !== null;
 
   return (
-    <div className="min-h-screen bg-earth-50 dark:bg-forest-950 flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden">
+    <div className="min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden">
       <NatureBackdrop />
       <div className="absolute right-4 top-4 z-20">
         <ThemeToggle />
       </div>
 
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="sm:mx-auto sm:w-full sm:max-w-md text-center"
+        className="relative z-10 sm:mx-auto sm:w-full sm:max-w-md text-center"
       >
         <div className="mx-auto h-16 w-16 bg-forest-600 text-white rounded-2xl flex items-center justify-center shadow-xl shadow-forest-500/30 transform rotate-3">
           <Leaf className="w-10 h-10 -rotate-3" />
@@ -76,7 +76,7 @@ export function Auth() {
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 0.1 }}
-        className="mt-8 sm:mx-auto sm:w-full sm:max-w-md"
+        className="relative z-10 mt-8 sm:mx-auto sm:w-full sm:max-w-md"
       >
         <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl py-8 px-4 shadow-2xl sm:rounded-3xl sm:px-10 border border-white/20 dark:border-gray-700/50">
           

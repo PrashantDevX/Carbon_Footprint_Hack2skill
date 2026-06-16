@@ -5,6 +5,35 @@ import { Card } from '@/components/ui/Card';
 
 const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined;
 
+type LatLng = { lat: number; lng: number };
+
+/**
+ * Minimal structural type for the subset of the Google Maps JS API this page
+ * uses. Defined locally to keep strong typing without pulling in the full
+ * `@types/google.maps` package.
+ */
+interface GoogleMapsApi {
+  maps: {
+    Map: new (el: HTMLElement, opts: Record<string, unknown>) => unknown;
+    Marker: new (opts: Record<string, unknown>) => unknown;
+    SymbolPath: { CIRCLE: number };
+    places: {
+      PlacesService: new (map: unknown) => {
+        nearbySearch: (
+          request: { location: LatLng; radius: number; type: string },
+          callback: (results: PlaceResult[] | null, status: string) => void
+        ) => void;
+      };
+    };
+  };
+}
+
+interface PlaceResult {
+  name: string;
+  vicinity?: string;
+  geometry?: { location: unknown };
+}
+
 interface Place {
   name: string;
   type: string;
@@ -43,8 +72,7 @@ export function GreenMap() {
     const init = async () => {
       try {
         const loader = new Loader({ apiKey, version: 'weekly', libraries: ['places'] });
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const google = (await loader.load()) as any;
+        const google = (await loader.load()) as unknown as GoogleMapsApi;
         if (cancelled || !mapRef.current) return;
 
         const center = await getUserLocation().catch(() => ({ lat: 28.6139, lng: 77.209 })); // Delhi fallback
@@ -79,8 +107,7 @@ export function GreenMap() {
               new Promise<void>((resolve) => {
                 service.nearbySearch(
                   { location: center, radius: 4000, type: query.type },
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  (results: any[], searchStatus: string) => {
+                  (results: PlaceResult[] | null, searchStatus: string) => {
                     if (searchStatus === 'OK' && results) {
                       results.slice(0, 2).forEach((r) => {
                         collected.push({ name: r.name, type: query.label, vicinity: r.vicinity, icon: query.icon });

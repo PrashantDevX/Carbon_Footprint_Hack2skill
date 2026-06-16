@@ -34,16 +34,20 @@ export const defaultInput: CarbonInput = {
   }
 };
 
+/**
+ * Neutral starter profile applied to every newly created account.
+ * Identity fields (uid, displayName, email, photo) are overwritten from the
+ * auth provider in `resolveProfile`; the values here are only sensible defaults.
+ */
 export const defaultProfile: UserProfile = {
-  uid: 'demo-user',
-  displayName: 'Eco Builder',
-  email: 'demo@ecotrack.local',
-  location: 'India',
-  householdSize: 3,
+  uid: '',
+  displayName: 'Eco Explorer',
+  location: '',
+  householdSize: 1,
   dietType: 'mixed',
   vehicleType: 'petrol',
-  points: 860,
-  badges: ['Baseline Built', 'Energy Saver', 'Waste Watcher'],
+  points: 0,
+  badges: [],
   preferredLanguage: 'en',
   notificationsEnabled: false
 };

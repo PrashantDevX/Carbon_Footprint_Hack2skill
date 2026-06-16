@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { calculateCarbonFootprint } from '@/lib/carbonCalculator';
+import { calculateCarbonFootprint, estimateReceiptItemKg } from '@/lib/carbonCalculator';
 import { defaultInput } from '@/lib/defaultData';
 
 describe('carbonCalculator', () => {
@@ -31,6 +31,35 @@ describe('carbonCalculator', () => {
       };
       const result = calculateCarbonFootprint(zeroInput);
       expect(result.monthlyKgCO2e).toBe(0);
+    });
+
+    it('keeps the sustainability score within 0–100 for a heavy footprint', () => {
+      const heavy = {
+        ...defaultInput,
+        transport: { ...defaultInput.transport, carKm: 5000, flightHours: 200 }
+      };
+      const result = calculateCarbonFootprint(heavy);
+      expect(result.score).toBeGreaterThanOrEqual(0);
+      expect(result.score).toBeLessThanOrEqual(100);
+    });
+  });
+
+  describe('estimateReceiptItemKg', () => {
+    it('rates carbon-intensive items higher than produce for the same price', () => {
+      const beef = estimateReceiptItemKg('Beef mince', 500);
+      const veg = estimateReceiptItemKg('Carrots', 500);
+      expect(beef).toBeGreaterThan(veg);
+    });
+
+    it('is case-insensitive when matching item keywords', () => {
+      expect(estimateReceiptItemKg('BEEF STEAK', 500)).toBe(estimateReceiptItemKg('beef steak', 500));
+    });
+
+    it('scales with price and never returns a negative estimate', () => {
+      expect(estimateReceiptItemKg('Generic item', 1000)).toBeGreaterThan(
+        estimateReceiptItemKg('Generic item', 100)
+      );
+      expect(estimateReceiptItemKg('Generic item', 0)).toBeGreaterThanOrEqual(0);
     });
   });
 });

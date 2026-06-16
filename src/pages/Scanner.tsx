@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Upload, Camera, FileText, CheckCircle, AlertCircle, Loader2, Check } from 'lucide-react';
 import { analyzeReceiptImage, type ReceiptScan } from '@/lib/gemini';
 import { useCarbon } from '@/hooks/useCarbon';
+import { MAX_RECEIPT_BYTES } from '@/lib/constants';
 
 /** Read a File into a base64 string (without the data: prefix) for the Gemini API. */
 function fileToBase64(file: File): Promise<string> {
@@ -37,7 +38,7 @@ export function Scanner() {
       setError('Please select a valid image file.');
       return;
     }
-    if (selected.size > 8 * 1024 * 1024) {
+    if (selected.size > MAX_RECEIPT_BYTES) {
       setError('Image is too large (max 8 MB).');
       return;
     }

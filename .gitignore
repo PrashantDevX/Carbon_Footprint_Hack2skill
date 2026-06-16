@@ -9,6 +9,9 @@ ui-debug.log
 coverage/
 playwright-report/
 test-results/
+*.tsbuildinfo
+vite-dev.log
+vite-dev.err.log
 functions/node_modules/
 functions/lib/
 ECOTRACK_COMPLETE_DEV_GUIDE.md

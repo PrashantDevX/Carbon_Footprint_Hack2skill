@@ -5,7 +5,7 @@
  */
 export function NatureBackdrop() {
   return (
-    <div aria-hidden="true" className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+    <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-0 overflow-hidden bg-earth-50 dark:bg-forest-950">
       {/* Ambient colour blobs */}
       <div className="absolute -left-[12%] -top-[10%] h-[42vw] w-[42vw] rounded-full bg-forest-300/25 blur-3xl dark:bg-forest-700/20" />
       <div className="absolute -right-[10%] top-[35%] h-[38vw] w-[38vw] rounded-full bg-earth-300/25 blur-3xl dark:bg-earth-900/15" />
