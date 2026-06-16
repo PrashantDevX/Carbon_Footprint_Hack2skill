@@ -3,8 +3,9 @@ import { BarChart3, Bot, Calculator, Camera, Flag, MapPinned, Medal, Settings, S
 import { useAuth } from '@/contexts/AuthContext';
 import { SkipLink } from '@/components/ui/SkipLink';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { AccountMenu } from '@/components/layout/AccountMenu';
+import { NatureBackdrop } from '@/components/ui/NatureBackdrop';
 import { cn } from '@/lib/utils';
-import { motion } from 'framer-motion';
 
 const navItems = [
   { to: '/', label: 'Dashboard', icon: BarChart3 },
@@ -24,6 +25,7 @@ export function AppLayout() {
 
   return (
     <div className="min-h-screen bg-earth-50 dark:bg-forest-950 text-gray-900 dark:text-gray-100 transition-colors duration-300">
+      <NatureBackdrop />
       <SkipLink />
       <aside className="fixed inset-y-0 left-0 z-20 hidden w-64 border-r border-gray-200/50 dark:border-gray-800/50 bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl px-4 py-5 lg:block shadow-2xl shadow-forest-900/5 dark:shadow-black/20">
         <div className="mb-8 flex items-center gap-3 px-2">
@@ -82,16 +84,7 @@ export function AppLayout() {
                 <p className="text-sm font-bold text-gray-900 dark:text-white">{user.displayName}</p>
                 <p className="text-xs font-medium text-forest-600 dark:text-forest-400">{user.points || 0} points</p>
               </div>
-              <motion.div 
-                whileHover={{ scale: 1.05 }}
-                className="grid h-10 w-10 overflow-hidden place-items-center rounded-full bg-gradient-to-tr from-earth-400 to-earth-600 text-sm font-black text-white shadow-md border-2 border-white dark:border-gray-800"
-              >
-                {user.photoURL ? (
-                  <img src={user.photoURL} alt={user.displayName} className="w-full h-full object-cover" />
-                ) : (
-                  user.displayName?.slice(0, 1).toUpperCase()
-                )}
-              </motion.div>
+              <AccountMenu />
             </div>
           </div>
           <nav className="flex gap-1 overflow-x-auto border-t border-gray-200/50 dark:border-gray-800/50 px-2 py-2 lg:hidden scrollbar-hide" aria-label="Mobile navigation">

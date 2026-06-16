@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { calculateCarbonFootprint } from '@/lib/carbonCalculator';
 import { defaultChallenges, defaultGoals, defaultInput } from '@/lib/defaultData';
-import type { CarbonInput, CarbonLog, Challenge, Goal } from '@/types/carbon';
+import type { CarbonInput, CarbonLog, Challenge, Goal, ScannedReceipt } from '@/types/carbon';
 import { uid } from '@/lib/utils';
 
 interface CarbonState {
@@ -10,11 +10,14 @@ interface CarbonState {
   logs: CarbonLog[];
   goals: Goal[];
   challenges: Challenge[];
+  receipts: ScannedReceipt[];
   setInput: (input: CarbonInput) => void;
   updateInput: <K extends keyof CarbonInput>(section: K, value: CarbonInput[K]) => void;
   saveLog: () => CarbonLog;
   addGoal: (goal: Omit<Goal, 'id' | 'completed' | 'currentKg'>) => void;
+  removeGoal: (id: string) => void;
   toggleChallenge: (id: string) => void;
+  addReceipt: (receipt: Omit<ScannedReceipt, 'id' | 'createdAt'>) => ScannedReceipt;
 }
 
 export const useCarbonStore = create<CarbonState>()(
@@ -31,6 +34,7 @@ export const useCarbonStore = create<CarbonState>()(
       ],
       goals: defaultGoals,
       challenges: defaultChallenges,
+      receipts: [],
       setInput: (input) => set({ input }),
       updateInput: (section, value) =>
         set((state) => ({ input: { ...state.input, [section]: value } })),
@@ -52,6 +56,8 @@ export const useCarbonStore = create<CarbonState>()(
             { ...goal, id: uid('goal'), completed: false, currentKg: 0 }
           ]
         })),
+      removeGoal: (id) =>
+        set((state) => ({ goals: state.goals.filter((goal) => goal.id !== id) })),
       toggleChallenge: (id) =>
         set((state) => ({
           challenges: state.challenges.map((challenge) =>
@@ -59,7 +65,16 @@ export const useCarbonStore = create<CarbonState>()(
               ? { ...challenge, completed: !challenge.completed }
               : challenge
           )
-        }))
+        })),
+      addReceipt: (receipt) => {
+        const entry: ScannedReceipt = {
+          ...receipt,
+          id: uid('receipt'),
+          createdAt: new Date().toISOString()
+        };
+        set((state) => ({ receipts: [entry, ...state.receipts].slice(0, 50) }));
+        return entry;
+      }
     }),
     { name: 'ecotrack-carbon-store' }
   )

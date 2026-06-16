@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
-import { ArrowDownRight, ArrowUpRight, Award, Leaf, Target, Zap } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { ArrowDownRight, ArrowUpRight, Award, Bot, Calculator as CalcIcon, Camera, Flag, Leaf, Target, Zap } from 'lucide-react';
 import { CategoryChart } from '@/components/charts/CategoryChart';
 import { CarbonTrendChart } from '@/components/charts/CarbonTrendChart';
 import { InsightsPanel } from '@/components/InsightsPanel';
@@ -50,6 +51,14 @@ export function Dashboard() {
           <p className="text-gray-500 dark:text-gray-400 mt-1">Here is your carbon intelligence overview.</p>
         </div>
       </motion.div>
+
+      {/* Quick actions — fast access to the main tools */}
+      <motion.section variants={itemVariants} className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <QuickAction to="/calculator" icon={<CalcIcon className="h-5 w-5" />} label="Log activity" hint="Update footprint" />
+        <QuickAction to="/scanner" icon={<Camera className="h-5 w-5" />} label="Scan receipt" hint="AI vision" />
+        <QuickAction to="/assistant" icon={<Bot className="h-5 w-5" />} label="Ask AI coach" hint="Get advice" />
+        <QuickAction to="/goals" icon={<Flag className="h-5 w-5" />} label="Set a goal" hint="Track progress" />
+      </motion.section>
 
       <section className="grid gap-6 xl:grid-cols-[1.4fr_0.8fr]">
         <motion.div variants={itemVariants}>
@@ -138,6 +147,23 @@ export function Dashboard() {
         <InsightsPanel />
       </motion.section>
     </motion.div>
+  );
+}
+
+function QuickAction({ to, icon, label, hint }: { to: string; icon: JSX.Element; label: string; hint: string }) {
+  return (
+    <Link
+      to={to}
+      className="group flex items-center gap-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-forest-300 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-forest-500 dark:border-gray-700 dark:bg-gray-800 dark:hover:border-forest-700"
+    >
+      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-forest-100 text-forest-600 transition-colors group-hover:bg-forest-600 group-hover:text-white dark:bg-forest-900/40 dark:text-forest-400">
+        {icon}
+      </span>
+      <span className="min-w-0">
+        <span className="block truncate font-semibold text-gray-900 dark:text-white">{label}</span>
+        <span className="block truncate text-xs text-gray-500 dark:text-gray-400">{hint}</span>
+      </span>
+    </Link>
   );
 }
 

@@ -14,6 +14,8 @@ export interface UserProfile {
   notificationsEnabled: boolean;
   photoURL?: string;
   createdAt?: string;
+  /** True only for anonymous (guest) sessions. */
+  isGuest?: boolean;
 }
 
 export interface LeaderboardUser {

@@ -96,3 +96,10 @@ export interface ReceiptItem {
   category: 'groceries' | 'clothing' | 'electronics' | 'household' | 'unknown';
   estimatedKgCO2e: number;
 }
+
+export interface ScannedReceipt {
+  id: string;
+  createdAt: string;
+  items: Array<{ name: string; category: string; footprint: number }>;
+  totalKgCO2e: number;
+}

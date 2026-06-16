@@ -1,4 +1,5 @@
-import { Bell, LogIn, Moon, Save, Sun, Monitor } from 'lucide-react';
+import { Bell, LogOut, Moon, Save, Sun, Monitor } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Field, SelectField } from '@/components/ui/Field';
@@ -9,9 +10,15 @@ import { cn } from '@/lib/utils';
 import type { UserProfile } from '@/types/user';
 
 export function Settings() {
-  const { user, updateProfile, signInAnonymously } = useAuth();
+  const { user, updateProfile, signOut } = useAuth();
   const { theme, setTheme } = useTheme();
   const notifications = useNotifications();
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/auth', { replace: true });
+  };
 
   if (!user) return null;
 
@@ -70,12 +77,24 @@ export function Settings() {
         </Card>
 
         <Card>
-          <h2 className="text-xl font-black text-gray-900 dark:text-white">Authentication</h2>
-          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-            EcoTrack supports Google sign-in and an anonymous guest mode for instant access.
-          </p>
-          <Button className="mt-4 w-full" variant="secondary" icon={<LogIn size={18} />} onClick={() => void signInAnonymously()}>
-            Use trial profile
+          <h2 className="text-xl font-black text-gray-900 dark:text-white">Account</h2>
+          <div className="mt-3 flex items-center gap-3">
+            <span className="grid h-11 w-11 place-items-center overflow-hidden rounded-full bg-gradient-to-tr from-forest-400 to-forest-600 text-sm font-black text-white">
+              {user.photoURL ? (
+                <img src={user.photoURL} alt="" className="h-full w-full object-cover" referrerPolicy="no-referrer" />
+              ) : (
+                user.displayName?.slice(0, 1).toUpperCase()
+              )}
+            </span>
+            <div className="min-w-0">
+              <p className="truncate font-semibold text-gray-900 dark:text-white">{user.displayName}</p>
+              <p className="truncate text-xs text-gray-500 dark:text-gray-400">
+                {user.isGuest ? 'Guest account' : user.email}
+              </p>
+            </div>
+          </div>
+          <Button className="mt-4 w-full" variant="danger" icon={<LogOut size={18} />} onClick={() => void handleSignOut()}>
+            {user.isGuest ? 'Exit guest mode' : 'Sign out'}
           </Button>
         </Card>
 

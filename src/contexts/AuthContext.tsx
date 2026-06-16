@@ -52,41 +52,57 @@ export function getAuthErrorMessage(error: unknown): string {
   }
 }
 
-/** Resolve (or lazily create) the Firestore profile for an authenticated user. */
-async function resolveProfile(firebaseUser: User): Promise<UserProfile> {
-  // Build a profile that never contains `undefined` values — Firestore rejects them.
-  const isAnonymous = firebaseUser.isAnonymous;
-  const baseProfile: UserProfile = {
-    ...defaultProfile,
-    uid: firebaseUser.uid,
-    displayName: firebaseUser.displayName || (isAnonymous ? 'Eco Guest' : 'Eco Explorer'),
-    createdAt: new Date().toISOString()
-  };
+/** Strip undefined values — Firestore rejects them in writes. */
+function sanitise(obj: object): Record<string, unknown> {
+  return Object.fromEntries(
+    Object.entries(obj as Record<string, unknown>).filter(([, value]) => value !== undefined)
+  );
+}
 
-  // Only attach optional fields when they actually have a value.
-  if (firebaseUser.email) baseProfile.email = firebaseUser.email;
-  else delete baseProfile.email;
-  if (firebaseUser.photoURL) baseProfile.photoURL = firebaseUser.photoURL;
-  else delete baseProfile.photoURL;
+/** The identity fields that should always reflect the live auth provider. */
+function authIdentity(firebaseUser: User) {
+  const isGuest = firebaseUser.isAnonymous;
+  const identity: Partial<UserProfile> = {
+    isGuest,
+    displayName: firebaseUser.displayName || (isGuest ? 'Eco Guest' : 'Eco Explorer')
+  };
+  if (firebaseUser.email) identity.email = firebaseUser.email;
+  if (firebaseUser.photoURL) identity.photoURL = firebaseUser.photoURL;
+  return identity;
+}
+
+/**
+ * Resolve (or lazily create) the Firestore profile for an authenticated user.
+ *
+ * Identity fields (name, email, photo, guest flag) are ALWAYS re-synced from the
+ * live auth provider — so signing in with Google never shows a stale "Guest"
+ * profile left over from a previous anonymous session or older app version.
+ */
+async function resolveProfile(firebaseUser: User): Promise<UserProfile> {
+  const identity = authIdentity(firebaseUser);
 
   if (!db) {
-    return baseProfile;
+    return { ...defaultProfile, uid: firebaseUser.uid, ...identity, createdAt: new Date().toISOString() };
   }
 
   const userRef = doc(db, 'users', firebaseUser.uid);
   const userSnap = await getDoc(userRef);
 
   if (userSnap.exists()) {
-    return userSnap.data() as UserProfile;
+    const existing = userSnap.data() as UserProfile;
+    // Refresh identity on the stored doc so it matches the current provider.
+    await setDoc(userRef, sanitise({ ...identity }), { merge: true });
+    return { ...existing, ...identity };
   }
 
-  // Strip any remaining undefined values defensively before writing.
-  const sanitised = Object.fromEntries(
-    Object.entries(baseProfile).filter(([, value]) => value !== undefined)
-  );
-
-  await setDoc(userRef, { ...sanitised, createdAt: serverTimestamp() });
-  return baseProfile;
+  const newProfile: UserProfile = {
+    ...defaultProfile,
+    uid: firebaseUser.uid,
+    ...identity,
+    createdAt: new Date().toISOString()
+  };
+  await setDoc(userRef, { ...sanitise(newProfile), createdAt: serverTimestamp() });
+  return newProfile;
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {

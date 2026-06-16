@@ -7,10 +7,13 @@ export function useCarbon() {
   const logs = useCarbonStore((state) => state.logs);
   const goals = useCarbonStore((state) => state.goals);
   const challenges = useCarbonStore((state) => state.challenges);
+  const receipts = useCarbonStore((state) => state.receipts);
   const updateInput = useCarbonStore((state) => state.updateInput);
   const saveLog = useCarbonStore((state) => state.saveLog);
   const addGoal = useCarbonStore((state) => state.addGoal);
+  const removeGoal = useCarbonStore((state) => state.removeGoal);
   const toggleChallenge = useCarbonStore((state) => state.toggleChallenge);
+  const addReceipt = useCarbonStore((state) => state.addReceipt);
   const result = useMemo(() => calculateCarbonFootprint(input), [input]);
 
   return {
@@ -19,9 +22,12 @@ export function useCarbon() {
     logs,
     goals,
     challenges,
+    receipts,
     updateInput,
     saveLog,
     addGoal,
-    toggleChallenge
+    removeGoal,
+    toggleChallenge,
+    addReceipt
   };
 }

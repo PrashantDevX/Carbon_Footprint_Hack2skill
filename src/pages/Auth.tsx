@@ -3,6 +3,7 @@ import { useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth, getAuthErrorMessage } from '@/contexts/AuthContext';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { NatureBackdrop } from '@/components/ui/NatureBackdrop';
 import { Leaf, LogIn, AlertCircle, Loader2 } from 'lucide-react';
 
 type Pending = 'google' | 'guest' | null;
@@ -50,13 +51,9 @@ export function Auth() {
 
   return (
     <div className="min-h-screen bg-earth-50 dark:bg-forest-950 flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden">
+      <NatureBackdrop />
       <div className="absolute right-4 top-4 z-20">
         <ThemeToggle />
-      </div>
-      {/* Decorative background elements */}
-      <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10">
-        <div className="absolute -top-[10%] -right-[5%] w-[40%] h-[40%] rounded-full bg-forest-200/30 dark:bg-forest-800/30 blur-3xl" />
-        <div className="absolute top-[60%] -left-[10%] w-[50%] h-[50%] rounded-full bg-earth-200/40 dark:bg-earth-900/20 blur-3xl" />
       </div>
 
       <motion.div 

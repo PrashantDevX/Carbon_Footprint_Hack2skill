@@ -43,14 +43,21 @@ advice (e.g. recommending an EV vs. hybrid based on the user's grid mix). The de
 
 ## 🚀 How the Solution Works
 
-1. **Auth & Onboarding** — Sign in with **Google** or **Guest (anonymous)**. A `UserProfile`
-   document is created in Firestore on first login.
-2. **Dashboard & Calculator** — Log transport, food, and energy use. `useCarbon` (TanStack
-   Query) syncs efficiently with Firestore and invalidates only what changed.
-3. **Receipt Scanning** — Upload a receipt → Cloud Function → Cloud Vision OCR → carbon
-   estimate returned to the client.
-4. **AI Assistant** — Gemini chatbot with the user's live emission context pre-loaded.
-5. **Gamification** — Goals, streaks, and a leaderboard built on relative carbon scores.
+1. **Auth & Onboarding** — Sign in with **Google** or **Guest (anonymous)**. Identity is
+   re-synced from the provider on every login, so a Google account is never shown as a
+   guest. A working account menu (header + Settings) handles sign-out.
+2. **Dashboard** — Quick-action tiles for fast access, live score, stat cards, trend +
+   category charts, and a personalized **Insights** panel.
+3. **Calculator** — A friendly, tabbed slider interface (Transport / Energy / Food /
+   Shopping / Water) with an instant live footprint snapshot.
+4. **Receipt Scanning** — Upload **or photograph** a receipt; **Gemini Vision** reads the
+   items, estimates each item's carbon, and the result is added to your log.
+5. **AI Assistant** — Gemini chatbot with the user's live emission breakdown pre-loaded.
+6. **Green Map** — A live Google Map (Places API) showing nearby transit, cycling,
+   recycling, and refill spots, with a styled demo fallback when no key is set.
+7. **Goals & Gamification** — Create/track reduction goals with progress bars, complete
+   weekly challenges for points, and a community leaderboard with podium + "You" highlight.
+8. **Theming** — One-click light/dark mode that respects OS preference and persists.
 
 ---
 
