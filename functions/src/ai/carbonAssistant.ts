@@ -1,14 +1,16 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { z } from 'zod';
+import { createHourlyRateLimiter } from '../lib/rateLimit.js';
+
+const GEMINI_MODEL = 'gemini-3.1-flash-lite';
+const enforceRateLimit = createHourlyRateLimiter(30, 'Hourly AI limit reached.');
 
 const requestSchema = z.object({
   prompt: z.string().min(1).max(800),
   monthlyKgCO2e: z.number().nonnegative(),
   topCategory: z.string().min(1).max(40)
 });
-
-const requests = new Map<string, number[]>();
 
 export const carbonAssistant = onCall({ region: 'us-central1', cors: true }, async (request) => {
   if (!request.auth) throw new HttpsError('unauthenticated', 'Sign in is required.');
@@ -22,16 +24,9 @@ export const carbonAssistant = onCall({ region: 'us-central1', cors: true }, asy
     };
   }
 
-  const model = new GoogleGenerativeAI(apiKey).getGenerativeModel({ model: 'gemini-3.1-flash-lite' });
+  const model = new GoogleGenerativeAI(apiKey).getGenerativeModel({ model: GEMINI_MODEL });
   const result = await model.generateContent(
     `Act as EcoTrack carbon coach. Footprint ${parsed.monthlyKgCO2e} kgCO2e/month. Top category ${parsed.topCategory}. User: ${parsed.prompt}`
   );
   return { text: result.response.text() };
 });
-
-function enforceRateLimit(uid: string) {
-  const now = Date.now();
-  const recent = (requests.get(uid) ?? []).filter((time) => now - time < 60 * 60 * 1000);
-  if (recent.length >= 30) throw new HttpsError('resource-exhausted', 'Hourly AI limit reached.');
-  requests.set(uid, [...recent, now]);
-}
