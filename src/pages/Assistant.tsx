@@ -77,7 +77,7 @@ export function Assistant() {
   };
 
   return (
-    <div className="grid h-[calc(100vh-8rem)] gap-4 lg:grid-cols-[260px_1fr]">
+    <div className="grid h-[calc(100dvh-12rem)] gap-4 lg:h-[calc(100vh-8rem)] lg:grid-cols-[260px_1fr]">
       {/* History sidebar */}
       <aside className="hidden flex-col rounded-2xl border border-gray-200 bg-white/70 p-3 backdrop-blur-md dark:border-gray-700 dark:bg-gray-800/70 lg:flex">
         <button

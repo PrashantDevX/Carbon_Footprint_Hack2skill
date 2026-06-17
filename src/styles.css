@@ -45,6 +45,22 @@
   .text-gradient {
     @apply bg-clip-text text-transparent bg-gradient-to-r from-forest-600 to-earth-500 dark:from-forest-400 dark:to-earth-300;
   }
+
+  /* Hide the scrollbar on the horizontally-scrolling mobile nav while keeping it scrollable. */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Prevent long unbroken strings (URLs, place names) from overflowing on small screens. */
+@layer base {
+  body {
+    overflow-wrap: break-word;
+  }
 }
 
 .skip-link {

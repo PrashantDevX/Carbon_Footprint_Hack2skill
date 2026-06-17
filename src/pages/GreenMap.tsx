@@ -1,9 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { Loader } from '@googlemaps/js-api-loader';
-import { Bike, Bus, Recycle, Store, MapPinned, Loader2, Navigation, AlertCircle } from 'lucide-react';
+import { Bike, Bus, Recycle, Store, MapPinned, Loader2, Navigation, AlertCircle, ExternalLink } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 
 const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined;
+
+const DELHI_FALLBACK: LatLng = { lat: 28.6139, lng: 77.209 };
+const SEARCH_RADIUS_M = 4000;
+const RESULTS_PER_CATEGORY = 2;
 
 type LatLng = { lat: number; lng: number };
 
@@ -14,11 +18,12 @@ type LatLng = { lat: number; lng: number };
  */
 interface GoogleMapsApi {
   maps: {
-    Map: new (el: HTMLElement, opts: Record<string, unknown>) => unknown;
-    Marker: new (opts: Record<string, unknown>) => unknown;
+    Map: new (el: HTMLElement, opts: Record<string, unknown>) => GMap;
+    Marker: new (opts: Record<string, unknown>) => GMarker;
+    InfoWindow: new (opts: Record<string, unknown>) => GInfoWindow;
     SymbolPath: { CIRCLE: number };
     places: {
-      PlacesService: new (map: unknown) => {
+      PlacesService: new (map: GMap) => {
         nearbySearch: (
           request: { location: LatLng; radius: number; type: string },
           callback: (results: PlaceResult[] | null, status: string) => void
@@ -28,10 +33,27 @@ interface GoogleMapsApi {
   };
 }
 
+interface GMap {
+  panTo: (latLng: LatLng) => void;
+  setZoom: (zoom: number) => void;
+}
+interface GMarker {
+  addListener: (event: string, handler: () => void) => void;
+}
+interface GInfoWindow {
+  setContent: (content: string) => void;
+  open: (opts: { anchor: GMarker; map: GMap }) => void;
+}
+
+interface GLatLng {
+  lat: () => number;
+  lng: () => number;
+}
+
 interface PlaceResult {
   name: string;
   vicinity?: string;
-  geometry?: { location: unknown };
+  geometry?: { location?: GLatLng };
 }
 
 interface Place {
@@ -39,6 +61,10 @@ interface Place {
   type: string;
   vicinity?: string;
   icon: typeof Bus;
+  /** Google Maps deep link — opens the place in a new tab / the Maps app. */
+  mapsUrl: string;
+  /** Present for live results; lets the in-app map pan to the spot. */
+  position?: LatLng;
 }
 
 // Green place categories to search for around the user.
@@ -49,16 +75,24 @@ const GREEN_QUERIES: { type: string; label: string; icon: typeof Bus }[] = [
   { type: 'supermarket', label: 'Refill / grocery', icon: Store }
 ];
 
-// Static fallback shown when no Maps API key is configured.
+/** Build a Google Maps search link that works on both desktop and mobile. */
+function buildMapsUrl(query: string, position?: LatLng): string {
+  const target = position ? `${position.lat},${position.lng}` : query;
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(target)}`;
+}
+
+// Static fallback shown when no Maps API key is configured. Each still links to
+// a real Google Maps search so the cards remain clickable everywhere.
 const fallbackPlaces: Place[] = [
-  { name: 'Metro station', type: 'Transit · 0.8 km', vicinity: 'Avoid ~2.6 kg CO₂e per commute', icon: Bus },
-  { name: 'Cycle repair hub', type: 'Mobility · 1.4 km', vicinity: 'Keep bike trips practical', icon: Bike },
-  { name: 'Refill grocery', type: 'Shopping · 2.1 km', vicinity: 'Reduce packaging waste', icon: Store },
-  { name: 'E-waste drop', type: 'Recycling · 3.2 km', vicinity: 'Recover device materials', icon: Recycle }
+  { name: 'Metro station', type: 'Transit · 0.8 km', vicinity: 'Avoid ~2.6 kg CO₂e per commute', icon: Bus, mapsUrl: buildMapsUrl('metro station near me') },
+  { name: 'Cycle repair hub', type: 'Mobility · 1.4 km', vicinity: 'Keep bike trips practical', icon: Bike, mapsUrl: buildMapsUrl('bicycle shop near me') },
+  { name: 'Refill grocery', type: 'Shopping · 2.1 km', vicinity: 'Reduce packaging waste', icon: Store, mapsUrl: buildMapsUrl('refill grocery store near me') },
+  { name: 'E-waste drop', type: 'Recycling · 3.2 km', vicinity: 'Recover device materials', icon: Recycle, mapsUrl: buildMapsUrl('recycling center near me') }
 ];
 
 export function GreenMap() {
   const mapRef = useRef<HTMLDivElement>(null);
+  const mapInstance = useRef<GMap | null>(null);
   const [places, setPlaces] = useState<Place[]>([]);
   const [status, setStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
   const [message, setMessage] = useState('');
@@ -75,14 +109,16 @@ export function GreenMap() {
         const google = (await loader.load()) as unknown as GoogleMapsApi;
         if (cancelled || !mapRef.current) return;
 
-        const center = await getUserLocation().catch(() => ({ lat: 28.6139, lng: 77.209 })); // Delhi fallback
+        const center = await getUserLocation().catch(() => DELHI_FALLBACK);
         const map = new google.maps.Map(mapRef.current, {
           center,
           zoom: 14,
           mapId: import.meta.env.VITE_GOOGLE_MAPS_MAP_ID || undefined,
           disableDefaultUI: true,
-          zoomControl: true
+          zoomControl: true,
+          gestureHandling: 'greedy' // one-finger pan on mobile
         });
+        mapInstance.current = map;
 
         new google.maps.Marker({
           position: center,
@@ -99,6 +135,7 @@ export function GreenMap() {
         });
 
         const service = new google.maps.places.PlacesService(map);
+        const infoWindow = new google.maps.InfoWindow({});
         const collected: Place[] = [];
 
         await Promise.all(
@@ -106,13 +143,28 @@ export function GreenMap() {
             (query) =>
               new Promise<void>((resolve) => {
                 service.nearbySearch(
-                  { location: center, radius: 4000, type: query.type },
+                  { location: center, radius: SEARCH_RADIUS_M, type: query.type },
                   (results: PlaceResult[] | null, searchStatus: string) => {
                     if (searchStatus === 'OK' && results) {
-                      results.slice(0, 2).forEach((r) => {
-                        collected.push({ name: r.name, type: query.label, vicinity: r.vicinity, icon: query.icon });
-                        if (r.geometry?.location) {
-                          new google.maps.Marker({ position: r.geometry.location, map, title: r.name });
+                      results.slice(0, RESULTS_PER_CATEGORY).forEach((r) => {
+                        const loc = r.geometry?.location;
+                        const position = loc ? { lat: loc.lat(), lng: loc.lng() } : undefined;
+                        collected.push({
+                          name: r.name,
+                          type: query.label,
+                          vicinity: r.vicinity,
+                          icon: query.icon,
+                          position,
+                          mapsUrl: buildMapsUrl(r.name, position)
+                        });
+                        if (position) {
+                          const marker = new google.maps.Marker({ position, map, title: r.name });
+                          marker.addListener('click', () => {
+                            infoWindow.setContent(
+                              `<strong>${r.name}</strong><br/>${r.vicinity ?? query.label}`
+                            );
+                            infoWindow.open({ anchor: marker, map });
+                          });
                         }
                       });
                     }
@@ -144,14 +196,22 @@ export function GreenMap() {
   const usingFallback = !apiKey || status === 'error';
   const listed = usingFallback ? fallbackPlaces : places;
 
+  // Pan the in-app map to a place (live map only); the card link still opens Maps.
+  const focusOnMap = (place: Place) => {
+    if (place.position && mapInstance.current) {
+      mapInstance.current.panTo(place.position);
+      mapInstance.current.setZoom(16);
+    }
+  };
+
   return (
     <div className="grid gap-5 xl:grid-cols-[1fr_360px]">
-      <Card className="min-h-[72vh] overflow-hidden p-0">
+      <Card className="overflow-hidden p-0 lg:min-h-[72vh]">
         {usingFallback ? (
           <StaticMap />
         ) : (
-          <div className="relative h-full min-h-[480px]">
-            <div ref={mapRef} className="h-full min-h-[480px] w-full" />
+          <div className="relative h-[55vh] min-h-[360px] w-full lg:h-full lg:min-h-[480px]">
+            <div ref={mapRef} className="h-full w-full" />
             {status === 'loading' && (
               <div className="absolute inset-0 grid place-items-center bg-white/70 dark:bg-gray-900/70">
                 <div className="flex items-center gap-2 text-forest-600 dark:text-forest-400">
@@ -163,18 +223,20 @@ export function GreenMap() {
         )}
       </Card>
 
-      <div className="grid gap-4 self-start">
+      <div className="grid content-start gap-4">
         <Card>
           <div className="flex items-center gap-2">
-            <MapPinned className="text-forest-600 dark:text-forest-400" aria-hidden="true" />
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white">Green alternatives nearby</h1>
+            <MapPinned className="shrink-0 text-forest-600 dark:text-forest-400" aria-hidden="true" />
+            <h1 className="text-lg font-bold text-gray-900 dark:text-white sm:text-xl">Green alternatives nearby</h1>
           </div>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            {usingFallback ? 'Demo locations — add a Maps API key for live results.' : 'Live results around your location.'}
+            {usingFallback
+              ? 'Demo locations — add a Maps API key for live results. Tap any card to open it in Google Maps.'
+              : 'Live results near you. Tap a card to open it in Google Maps, or tap a pin for details.'}
           </p>
           {message && (
             <p className="mt-2 flex items-center gap-2 text-xs text-amber-600 dark:text-amber-400">
-              <AlertCircle className="h-3.5 w-3.5" /> {message}
+              <AlertCircle className="h-3.5 w-3.5 shrink-0" /> {message}
             </p>
           )}
         </Card>
@@ -185,16 +247,28 @@ export function GreenMap() {
           </Card>
         ) : (
           listed.map((place, idx) => (
-            <Card key={`${place.name}-${idx}`} className="flex gap-4">
-              <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-forest-50 text-forest-600 dark:bg-forest-900/40 dark:text-forest-400">
+            <a
+              key={`${place.name}-${idx}`}
+              href={place.mapsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => focusOnMap(place)}
+              aria-label={`Open ${place.name} in Google Maps`}
+              className="group flex items-center gap-4 rounded-2xl border border-gray-200/70 bg-white/80 p-4 shadow-sm backdrop-blur-md transition-all hover:-translate-y-0.5 hover:border-forest-300 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-forest-500 dark:border-gray-700/70 dark:bg-gray-800/70 dark:hover:border-forest-700"
+            >
+              <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-forest-50 text-forest-600 transition-colors group-hover:bg-forest-600 group-hover:text-white dark:bg-forest-900/40 dark:text-forest-400">
                 <place.icon aria-hidden="true" />
               </span>
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-gray-500 dark:text-gray-400">{place.type}</p>
-                <h2 className="truncate text-lg font-bold text-gray-900 dark:text-white">{place.name}</h2>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{place.type}</p>
+                <h2 className="truncate text-base font-bold text-gray-900 dark:text-white sm:text-lg">{place.name}</h2>
                 {place.vicinity && <p className="mt-0.5 truncate text-sm text-gray-600 dark:text-gray-400">{place.vicinity}</p>}
               </div>
-            </Card>
+              <ExternalLink
+                className="h-4 w-4 shrink-0 text-gray-300 transition-colors group-hover:text-forest-500 dark:text-gray-600"
+                aria-hidden="true"
+              />
+            </a>
           ))
         )}
       </div>
@@ -202,7 +276,7 @@ export function GreenMap() {
   );
 }
 
-function getUserLocation(): Promise<{ lat: number; lng: number }> {
+function getUserLocation(): Promise<LatLng> {
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) return reject(new Error('No geolocation'));
     navigator.geolocation.getCurrentPosition(
@@ -222,7 +296,7 @@ function StaticMap() {
     { icon: Recycle, x: '42%', y: '70%' }
   ];
   return (
-    <div className="relative h-[72vh] min-h-[480px] bg-[linear-gradient(135deg,#dff5f0,#fef3c7_55%,#dbeafe)] dark:bg-[linear-gradient(135deg,#0b3b2e,#1f2937_55%,#0f2a3f)]">
+    <div className="relative h-[55vh] min-h-[360px] bg-[linear-gradient(135deg,#dff5f0,#fef3c7_55%,#dbeafe)] dark:bg-[linear-gradient(135deg,#0b3b2e,#1f2937_55%,#0f2a3f)] lg:h-[72vh]">
       <div className="absolute inset-0 opacity-40 [background-image:linear-gradient(#64748b_1px,transparent_1px),linear-gradient(90deg,#64748b_1px,transparent_1px)] [background-size:72px_72px]" />
       <div className="absolute left-[10%] top-[20%] h-[64%] w-[18px] rotate-[28deg] rounded-full bg-white/80 shadow dark:bg-white/20" />
       <div className="absolute left-[18%] top-[54%] h-[16px] w-[66%] -rotate-[8deg] rounded-full bg-white/80 shadow dark:bg-white/20" />
@@ -234,9 +308,9 @@ function StaticMap() {
           </span>
         </div>
       ))}
-      <div className="absolute left-5 top-5 flex items-center gap-2 rounded-xl bg-white/90 px-4 py-3 shadow-lg dark:bg-gray-800/90">
-        <Navigation className="text-forest-600 dark:text-forest-400" aria-hidden="true" />
-        <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">Demo map · add a Maps API key for live data</p>
+      <div className="absolute left-3 top-3 flex items-center gap-2 rounded-xl bg-white/90 px-3 py-2 shadow-lg dark:bg-gray-800/90 sm:left-5 sm:top-5 sm:px-4 sm:py-3">
+        <Navigation className="shrink-0 text-forest-600 dark:text-forest-400" aria-hidden="true" />
+        <p className="text-xs font-semibold text-gray-700 dark:text-gray-200 sm:text-sm">Demo map · add a Maps API key for live data</p>
       </div>
     </div>
   );

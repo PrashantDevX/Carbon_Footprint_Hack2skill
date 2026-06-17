@@ -62,40 +62,42 @@ export function Leaderboard() {
       </div>
 
       <Card className="overflow-hidden p-0">
-        <table className="w-full text-left">
-          <thead className="bg-gray-50 text-sm text-gray-500 dark:bg-gray-900/50 dark:text-gray-400">
-            <tr>
-              <th className="p-3 font-semibold">Rank</th>
-              <th className="p-3 font-semibold">Member</th>
-              <th className="hidden p-3 font-semibold sm:table-cell">Badge</th>
-              <th className="p-3 text-right font-semibold">kg CO₂e/mo</th>
-              <th className="p-3 text-right font-semibold">Points</th>
-            </tr>
-          </thead>
-          <tbody>
-            {ranked.map((member, index) => {
-              const isYou = user?.uid === member.uid;
-              return (
-                <tr
-                  key={member.uid}
-                  className={cn(
-                    'border-t border-gray-100 dark:border-gray-700/60',
-                    isYou && 'bg-forest-50 dark:bg-forest-900/20'
-                  )}
-                >
-                  <td className="p-3 font-black text-gray-900 dark:text-white">{index + 1}</td>
-                  <td className="p-3 font-semibold text-gray-900 dark:text-gray-100">
-                    {member.displayName}
-                    {isYou && <span className="ml-2 rounded-full bg-forest-600 px-2 py-0.5 text-xs font-semibold text-white">You</span>}
-                  </td>
-                  <td className="hidden p-3 text-gray-600 dark:text-gray-400 sm:table-cell">{member.badge}</td>
-                  <td className="p-3 text-right text-gray-900 dark:text-gray-100">{member.monthlyKgCO2e}</td>
-                  <td className="p-3 text-right text-gray-900 dark:text-gray-100">{member.points}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[420px] text-left">
+            <thead className="bg-gray-50 text-xs text-gray-500 dark:bg-gray-900/50 dark:text-gray-400 sm:text-sm">
+              <tr>
+                <th className="p-2.5 font-semibold sm:p-3">Rank</th>
+                <th className="p-2.5 font-semibold sm:p-3">Member</th>
+                <th className="hidden p-2.5 font-semibold sm:table-cell sm:p-3">Badge</th>
+                <th className="p-2.5 text-right font-semibold sm:p-3">kg CO₂e/mo</th>
+                <th className="p-2.5 text-right font-semibold sm:p-3">Points</th>
+              </tr>
+            </thead>
+            <tbody>
+              {ranked.map((member, index) => {
+                const isYou = user?.uid === member.uid;
+                return (
+                  <tr
+                    key={member.uid}
+                    className={cn(
+                      'border-t border-gray-100 text-sm dark:border-gray-700/60',
+                      isYou && 'bg-forest-50 dark:bg-forest-900/20'
+                    )}
+                  >
+                    <td className="p-2.5 font-black text-gray-900 dark:text-white sm:p-3">{index + 1}</td>
+                    <td className="p-2.5 font-semibold text-gray-900 dark:text-gray-100 sm:p-3">
+                      {member.displayName}
+                      {isYou && <span className="ml-2 rounded-full bg-forest-600 px-2 py-0.5 text-xs font-semibold text-white">You</span>}
+                    </td>
+                    <td className="hidden p-2.5 text-gray-600 dark:text-gray-400 sm:table-cell sm:p-3">{member.badge}</td>
+                    <td className="p-2.5 text-right text-gray-900 dark:text-gray-100 sm:p-3">{member.monthlyKgCO2e}</td>
+                    <td className="p-2.5 text-right text-gray-900 dark:text-gray-100 sm:p-3">{member.points}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </Card>
     </div>
   );

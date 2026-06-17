@@ -30,7 +30,7 @@ export function Goals() {
     <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
       <div className="grid gap-6">
         <div>
-          <h1 className="font-display text-3xl font-bold text-gray-900 dark:text-white">Goals &amp; Challenges</h1>
+          <h1 className="font-display text-2xl font-bold text-gray-900 dark:text-white sm:text-3xl">Goals &amp; Challenges</h1>
           <p className="mt-1 text-gray-500 dark:text-gray-400">Set reduction targets and complete weekly challenges to earn points.</p>
         </div>
 

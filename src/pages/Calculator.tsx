@@ -41,7 +41,7 @@ export function Calculator() {
     <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="grid gap-6 xl:grid-cols-[1fr_340px]">
       <div className="grid gap-5">
         <div>
-          <h1 className="font-display text-3xl font-bold text-gray-900 dark:text-white">Carbon Calculator</h1>
+          <h1 className="font-display text-2xl font-bold text-gray-900 dark:text-white sm:text-3xl">Carbon Calculator</h1>
           <p className="mt-1 text-gray-500 dark:text-gray-400">
             Slide to match your lifestyle — your footprint updates instantly.
           </p>

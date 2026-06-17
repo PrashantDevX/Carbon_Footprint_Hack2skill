@@ -50,7 +50,7 @@ export function Dashboard() {
     >
       <motion.div variants={itemVariants} className="flex items-center justify-between mb-2">
         <div>
-          <h1 className="text-3xl font-display font-bold text-gray-900 dark:text-white">
+          <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-white sm:text-3xl">
             Welcome back, {user?.displayName?.split(' ')[0] || 'Explorer'}
           </h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1">Here is your carbon intelligence overview.</p>
