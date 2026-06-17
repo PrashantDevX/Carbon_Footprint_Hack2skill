@@ -16,3 +16,10 @@ export function percent(value: number) {
 export function uid(prefix = 'id') {
   return `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
 }
+
+export const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+/** ISO timestamp `days` in the future (negative for the past). */
+export function isoDaysFromNow(days: number): string {
+  return new Date(Date.now() + days * MS_PER_DAY).toISOString();
+}

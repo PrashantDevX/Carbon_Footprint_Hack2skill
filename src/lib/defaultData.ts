@@ -1,5 +1,6 @@
 import type { CarbonInput, Challenge, Goal } from '@/types/carbon';
 import type { LeaderboardUser, UserProfile } from '@/types/user';
+import { isoDaysFromNow } from '@/lib/utils';
 
 export const defaultInput: CarbonInput = {
   transport: {
@@ -59,7 +60,7 @@ export const defaultGoals: Goal[] = [
     category: 'energy',
     targetKg: 35,
     currentKg: 18,
-    dueDate: '2026-07-15',
+    dueDate: isoDaysFromNow(28),
     completed: false
   },
   {
@@ -68,7 +69,7 @@ export const defaultGoals: Goal[] = [
     category: 'food',
     targetKg: 22,
     currentKg: 22,
-    dueDate: '2026-06-30',
+    dueDate: isoDaysFromNow(14),
     completed: true
   }
 ];
@@ -98,8 +99,8 @@ export const defaultChallenges: Challenge[] = [
 ];
 
 export const leaderboard: LeaderboardUser[] = [
-  { uid: 'a', displayName: 'Asha', monthlyKgCO2e: 412, points: 1440, badge: 'Planet Pro' },
-  { uid: 'b', displayName: 'Rohan', monthlyKgCO2e: 486, points: 1210, badge: 'Transit Hero' },
-  { uid: 'demo-user', displayName: 'Eco Builder', monthlyKgCO2e: 528, points: 860, badge: 'Rising' },
-  { uid: 'd', displayName: 'Mira', monthlyKgCO2e: 611, points: 720, badge: 'Starter' }
+  { uid: 'lb-asha', displayName: 'Asha', monthlyKgCO2e: 412, points: 1440, badge: 'Planet Pro' },
+  { uid: 'lb-rohan', displayName: 'Rohan', monthlyKgCO2e: 486, points: 1210, badge: 'Transit Hero' },
+  { uid: 'lb-kavya', displayName: 'Kavya', monthlyKgCO2e: 528, points: 860, badge: 'Rising' },
+  { uid: 'lb-mira', displayName: 'Mira', monthlyKgCO2e: 611, points: 720, badge: 'Starter' }
 ];

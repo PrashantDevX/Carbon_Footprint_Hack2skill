@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Field, SelectField } from '@/components/ui/Field';
 import { useCarbon } from '@/hooks/useCarbon';
+import { GOAL_HORIZON_DAYS } from '@/lib/constants';
+import { isoDaysFromNow } from '@/lib/utils';
 import type { CarbonCategory } from '@/types/carbon';
 
 const categoryColor: Record<CarbonCategory, string> = {
@@ -139,7 +141,7 @@ export function Goals() {
           onSubmit={(event) => {
             event.preventDefault();
             if (!title.trim()) return;
-            addGoal({ title: title.trim(), category, targetKg, dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() });
+            addGoal({ title: title.trim(), category, targetKg, dueDate: isoDaysFromNow(GOAL_HORIZON_DAYS) });
             setTitle('');
             setTargetKg(20);
           }}

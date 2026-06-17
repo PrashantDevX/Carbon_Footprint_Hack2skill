@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useNotifications } from '@/hooks/useNotifications';
 import { cn } from '@/lib/utils';
+import { DIET_OPTIONS, LANGUAGE_OPTIONS, THEME_STORAGE_KEY, VEHICLE_OPTIONS } from '@/lib/constants';
 import type { UserProfile } from '@/types/user';
 
 export function Settings() {
@@ -33,23 +34,9 @@ export function Settings() {
           <Field label="Display name" value={user.displayName} onChange={(event) => updateProfile({ displayName: event.target.value })} />
           <Field label="Location" value={user.location} onChange={(event) => updateProfile({ location: event.target.value })} />
           <Field label="Household size" type="number" min={1} value={user.householdSize} onChange={(event) => updateProfile({ householdSize: Number(event.target.value) })} />
-          <SelectField label="Diet type" value={user.dietType} onChange={(event) => updateProfile({ dietType: event.target.value as UserProfile['dietType'] })} options={[
-            { value: 'vegan', label: 'Vegan' },
-            { value: 'vegetarian', label: 'Vegetarian' },
-            { value: 'mixed', label: 'Mixed' },
-            { value: 'meat-heavy', label: 'Meat-heavy' }
-          ]} />
-          <SelectField label="Vehicle" value={user.vehicleType} onChange={(event) => updateProfile({ vehicleType: event.target.value as UserProfile['vehicleType'] })} options={[
-            { value: 'petrol', label: 'Petrol' },
-            { value: 'diesel', label: 'Diesel' },
-            { value: 'hybrid', label: 'Hybrid' },
-            { value: 'electric', label: 'Electric' }
-          ]} />
-          <SelectField label="Language" value={user.preferredLanguage} onChange={(event) => updateProfile({ preferredLanguage: event.target.value as UserProfile['preferredLanguage'] })} options={[
-            { value: 'en', label: 'English' },
-            { value: 'hi', label: 'Hindi' },
-            { value: 'es', label: 'Spanish' }
-          ]} />
+          <SelectField label="Diet type" value={user.dietType} onChange={(event) => updateProfile({ dietType: event.target.value as UserProfile['dietType'] })} options={DIET_OPTIONS} />
+          <SelectField label="Vehicle" value={user.vehicleType} onChange={(event) => updateProfile({ vehicleType: event.target.value as UserProfile['vehicleType'] })} options={VEHICLE_OPTIONS} />
+          <SelectField label="Language" value={user.preferredLanguage} onChange={(event) => updateProfile({ preferredLanguage: event.target.value as UserProfile['preferredLanguage'] })} options={LANGUAGE_OPTIONS} />
         </div>
         <div className="mt-5 inline-flex items-center gap-2 rounded-xl bg-forest-50 px-4 py-2 text-sm font-medium text-forest-700 dark:bg-forest-900/30 dark:text-forest-300">
           <Save size={16} aria-hidden="true" /> Saved automatically
@@ -67,7 +54,7 @@ export function Settings() {
           <button
             type="button"
             onClick={() => {
-              localStorage.removeItem('ecotrack-theme');
+              localStorage.removeItem(THEME_STORAGE_KEY);
               setTheme(window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
             }}
             className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-forest-600 dark:text-gray-400 dark:hover:text-forest-400"

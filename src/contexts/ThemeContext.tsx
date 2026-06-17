@@ -6,6 +6,7 @@ import {
   useCallback,
   type ReactNode
 } from 'react';
+import { THEME_STORAGE_KEY as STORAGE_KEY } from '@/lib/constants';
 
 type Theme = 'light' | 'dark';
 
@@ -16,7 +17,6 @@ interface ThemeContextValue {
 }
 
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
-const STORAGE_KEY = 'ecotrack-theme';
 
 function getInitialTheme(): Theme {
   if (typeof window === 'undefined') return 'light';

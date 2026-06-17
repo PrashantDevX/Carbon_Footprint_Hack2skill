@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware';
 import { calculateCarbonFootprint } from '@/lib/carbonCalculator';
 import { defaultChallenges, defaultGoals, defaultInput } from '@/lib/defaultData';
 import type { CarbonInput, CarbonLog, Challenge, Goal, ScannedReceipt } from '@/types/carbon';
-import { uid } from '@/lib/utils';
+import { isoDaysFromNow, uid } from '@/lib/utils';
 
 interface CarbonState {
   input: CarbonInput;
@@ -27,7 +27,7 @@ export const useCarbonStore = create<CarbonState>()(
       logs: [
         {
           id: 'seed-log',
-          createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 14).toISOString(),
+          createdAt: isoDaysFromNow(-14),
           input: defaultInput,
           result: calculateCarbonFootprint(defaultInput)
         }

@@ -8,6 +8,9 @@ import { RangeField } from '@/components/ui/RangeField';
 import { useCarbon } from '@/hooks/useCarbon';
 import type { CarbonInput, CarbonCategory } from '@/types/carbon';
 import { formatKg } from '@/lib/utils';
+import { DIET_OPTIONS, GRID_OPTIONS, VEHICLE_OPTIONS } from '@/lib/constants';
+
+const SAVE_FEEDBACK_MS = 1200;
 
 const TABS: { key: CarbonCategory; label: string; icon: typeof Car }[] = [
   { key: 'transport', label: 'Transport', icon: Car },
@@ -29,7 +32,7 @@ export function Calculator() {
   const handleSave = async () => {
     setIsSaving(true);
     await saveLog();
-    setTimeout(() => setIsSaving(false), 1200);
+    setTimeout(() => setIsSaving(false), SAVE_FEEDBACK_MS);
   };
 
   const activeCategory = result.categories.find((c) => c.category === active);
@@ -94,9 +97,7 @@ export function Calculator() {
                   <RangeField label="Bus travel" suffix="km/mo" min={0} max={1000} step={10} value={input.transport.busKm} onChange={(v) => setSection('transport', { busKm: v })} />
                   <RangeField label="Train travel" suffix="km/mo" min={0} max={1000} step={10} value={input.transport.trainKm} onChange={(v) => setSection('transport', { trainKm: v })} />
                   <RangeField label="Flights" suffix="hrs/mo" min={0} max={50} step={1} value={input.transport.flightHours} onChange={(v) => setSection('transport', { flightHours: v })} />
-                  <SelectField label="Vehicle type" value={input.transport.vehicleType} onChange={(e) => setSection('transport', { vehicleType: e.target.value as CarbonInput['transport']['vehicleType'] })} options={[
-                    { value: 'petrol', label: 'Petrol' }, { value: 'diesel', label: 'Diesel' }, { value: 'hybrid', label: 'Hybrid' }, { value: 'electric', label: 'Electric' }
-                  ]} />
+                  <SelectField label="Vehicle type" value={input.transport.vehicleType} onChange={(e) => setSection('transport', { vehicleType: e.target.value as CarbonInput['transport']['vehicleType'] })} options={VEHICLE_OPTIONS} />
                 </>
               )}
 
@@ -105,17 +106,13 @@ export function Calculator() {
                   <RangeField label="Electricity" suffix="kWh/mo" min={0} max={1500} step={10} value={input.energy.electricityKwh} onChange={(v) => setSection('energy', { electricityKwh: v })} />
                   <RangeField label="Gas" suffix="therms/mo" min={0} max={100} step={1} value={input.energy.gasTherms} onChange={(v) => setSection('energy', { gasTherms: v })} />
                   <RangeField label="Renewable share" suffix="%" min={0} max={100} step={5} value={input.energy.renewablePercent} onChange={(v) => setSection('energy', { renewablePercent: v })} />
-                  <SelectField label="Grid region" value={input.energy.country} onChange={(e) => setSection('energy', { country: e.target.value as CarbonInput['energy']['country'] })} options={[
-                    { value: 'india', label: 'India' }, { value: 'us', label: 'United States' }, { value: 'uk', label: 'United Kingdom' }, { value: 'eu', label: 'European Union' }, { value: 'global', label: 'Global average' }
-                  ]} />
+                  <SelectField label="Grid region" value={input.energy.country} onChange={(e) => setSection('energy', { country: e.target.value as CarbonInput['energy']['country'] })} options={GRID_OPTIONS} />
                 </>
               )}
 
               {active === 'food' && (
                 <>
-                  <SelectField label="Diet" value={input.food.dietType} onChange={(e) => setSection('food', { dietType: e.target.value as CarbonInput['food']['dietType'] })} options={[
-                    { value: 'vegan', label: 'Vegan' }, { value: 'vegetarian', label: 'Vegetarian' }, { value: 'mixed', label: 'Mixed' }, { value: 'meat-heavy', label: 'Meat-heavy' }
-                  ]} />
+                  <SelectField label="Diet" value={input.food.dietType} onChange={(e) => setSection('food', { dietType: e.target.value as CarbonInput['food']['dietType'] })} options={DIET_OPTIONS} />
                   <RangeField label="Meals per day" suffix="meals" min={1} max={5} step={1} value={input.food.mealsPerDay} onChange={(v) => setSection('food', { mealsPerDay: v })} />
                   <RangeField label="Food waste" suffix="%" min={0} max={50} step={1} value={input.food.foodWastePercent} onChange={(v) => setSection('food', { foodWastePercent: v })} />
                   <RangeField label="Local food" suffix="%" min={0} max={100} step={5} value={input.food.localFoodPercent} onChange={(v) => setSection('food', { localFoodPercent: v })} />

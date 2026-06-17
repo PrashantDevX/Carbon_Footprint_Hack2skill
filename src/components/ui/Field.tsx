@@ -28,7 +28,7 @@ export function Field({ label, suffix, id, ...props }: FieldProps) {
 
 interface SelectFieldProps extends SelectHTMLAttributes<HTMLSelectElement> {
   label: string;
-  options: { value: string; label: string }[];
+  options: readonly { readonly value: string; readonly label: string }[];
 }
 
 export function SelectField({ label, id, options, ...props }: SelectFieldProps) {

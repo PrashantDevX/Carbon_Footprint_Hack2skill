@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/Card';
 import { generateInsights, totalPotentialSaving } from '@/lib/insights';
 import { useCarbon } from '@/hooks/useCarbon';
 import { GOAL_HORIZON_DAYS } from '@/lib/constants';
+import { isoDaysFromNow } from '@/lib/utils';
 
 const effortStyles: Record<string, string> = {
   easy: 'bg-forest-100 text-forest-700 dark:bg-forest-900/40 dark:text-forest-300',
@@ -24,7 +25,7 @@ export function InsightsPanel() {
       title: insight.title,
       category: insight.category,
       targetKg: Math.max(1, Math.round(insight.potentialMonthlySaving)),
-      dueDate: new Date(Date.now() + GOAL_HORIZON_DAYS * 24 * 60 * 60 * 1000).toISOString()
+      dueDate: isoDaysFromNow(GOAL_HORIZON_DAYS)
     });
     setAddedIds((prev) => new Set(prev).add(insight.id));
   };

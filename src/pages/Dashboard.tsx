@@ -7,9 +7,14 @@ import { InsightsPanel } from '@/components/InsightsPanel';
 import { Card } from '@/components/ui/Card';
 import { useCarbon } from '@/hooks/useCarbon';
 import { defaultInput } from '@/lib/defaultData';
-import { formatKg } from '@/lib/utils';
+import { formatKg, isoDaysFromNow } from '@/lib/utils';
 import type { CarbonLog } from '@/types/carbon';
 import { useAuth } from '@/contexts/AuthContext';
+
+// Fallback figures used to render the trend chart before any real logs exist.
+const DEMO_BASELINE_KG = 540;
+const DEMO_MONTHLY_DRIFT_KG = 28;
+const DAYS_PER_MONTH = 30;
 
 import type { Variants } from 'framer-motion';
 
@@ -189,10 +194,10 @@ function StatCard({ title, value, icon, color = "forest" }: { title: string; val
 }
 
 function buildDemoTrend(log?: CarbonLog): CarbonLog[] {
-  const base = log?.result.monthlyKgCO2e ?? 540;
+  const base = log?.result.monthlyKgCO2e ?? DEMO_BASELINE_KG;
   return [4, 3, 2, 1, 0].map((monthsAgo) => ({
     id: `demo-${monthsAgo}`,
-    createdAt: new Date(Date.now() - monthsAgo * 30 * 24 * 60 * 60 * 1000).toISOString(),
+    createdAt: isoDaysFromNow(-monthsAgo * DAYS_PER_MONTH),
     input: log?.input ?? defaultInput,
     result: {
       ...(log?.result ?? {
@@ -206,7 +211,7 @@ function buildDemoTrend(log?: CarbonLog): CarbonLog[] {
           percentVsGlobal: -40
         }
       }),
-      monthlyKgCO2e: base + monthsAgo * 28
+      monthlyKgCO2e: base + monthsAgo * DEMO_MONTHLY_DRIFT_KG
     }
   }));
 }

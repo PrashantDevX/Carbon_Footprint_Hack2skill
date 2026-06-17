@@ -2,15 +2,32 @@ import { Medal, Crown } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { leaderboard } from '@/lib/defaultData';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCarbon } from '@/hooks/useCarbon';
 import { cn } from '@/lib/utils';
+import type { LeaderboardUser } from '@/types/user';
 
-const rankAccent = ['text-amber-500', 'text-gray-400', 'text-amber-700'];
+// Podium styling, indexed by finishing position (gold, silver, bronze).
+const PODIUM_ACCENTS = ['text-amber-500', 'text-gray-400', 'text-amber-700'];
+const PODIUM_OFFSETS = ['mt-6', 'mt-0', 'mt-10'];
 
 export function Leaderboard() {
   const { user } = useAuth();
-  const ranked = leaderboard
-    .slice()
-    .sort((a, b) => a.monthlyKgCO2e - b.monthlyKgCO2e || b.points - a.points);
+  const { result } = useCarbon();
+
+  // Place the signed-in user on the board so their rank is meaningful.
+  const me: LeaderboardUser | null = user
+    ? {
+        uid: user.uid,
+        displayName: user.displayName || 'You',
+        monthlyKgCO2e: Math.round(result.monthlyKgCO2e),
+        points: user.points ?? 0,
+        badge: user.badges?.[0] ?? 'Newcomer'
+      }
+    : null;
+
+  const ranked = [...leaderboard, ...(me ? [me] : [])].sort(
+    (a, b) => a.monthlyKgCO2e - b.monthlyKgCO2e || b.points - a.points
+  );
 
   return (
     <div className="grid gap-6">
@@ -29,11 +46,10 @@ export function Leaderboard() {
         {[1, 0, 2].map((podiumIndex) => {
           const member = ranked[podiumIndex];
           if (!member) return <div key={podiumIndex} />;
-          const heights = ['mt-6', 'mt-0', 'mt-10'];
           return (
-            <Card key={member.uid} className={cn('flex flex-col items-center text-center', heights[podiumIndex])}>
+            <Card key={member.uid} className={cn('flex flex-col items-center text-center', PODIUM_OFFSETS[podiumIndex])}>
               {podiumIndex === 0 && <Crown className="mb-1 h-6 w-6 text-amber-500" aria-hidden="true" />}
-              <span className={cn('text-3xl font-black', rankAccent[podiumIndex])}>#{podiumIndex + 1}</span>
+              <span className={cn('text-3xl font-black', PODIUM_ACCENTS[podiumIndex])}>#{podiumIndex + 1}</span>
               <span className="grid h-12 w-12 place-items-center rounded-full bg-gradient-to-tr from-forest-400 to-forest-600 text-lg font-black text-white">
                 {member.displayName.slice(0, 1)}
               </span>
@@ -58,7 +74,7 @@ export function Leaderboard() {
           </thead>
           <tbody>
             {ranked.map((member, index) => {
-              const isYou = user?.displayName === member.displayName;
+              const isYou = user?.uid === member.uid;
               return (
                 <tr
                   key={member.uid}
